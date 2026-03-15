@@ -48,19 +48,19 @@ struct GlfwWindowDeleter {
 using GlfwWindowPtr = std::unique_ptr<GLFWwindow, GlfwWindowDeleter>;
 
 template<typename T, typename Deleter>
-class GLHandle {
+class GlHandle {
 public:
-    GLHandle() = default;
-    explicit GLHandle(T id) : id(id) {}
+    GlHandle() = default;
+    explicit GlHandle(T id) : id(id) {}
 
-    ~GLHandle() { reset(); }
+    ~GlHandle() { reset(); }
 
-    GLHandle(const GLHandle&) = delete;
-    GLHandle& operator=(const GLHandle&) = delete;
+    GlHandle(const GlHandle&) = delete;
+    GlHandle& operator=(const GlHandle&) = delete;
 
-    GLHandle(GLHandle&& other) noexcept : id(other.release()) {}
+    GlHandle(GlHandle&& other) noexcept : id(other.release()) {}
 
-    GLHandle& operator=(GLHandle&& other) noexcept {
+    GlHandle& operator=(GlHandle&& other) noexcept {
         if (this != &other)
             reset(other.release());
         return *this;
@@ -90,7 +90,7 @@ struct GlShaderDeleter {
         glDeleteShader(id);
     }
 };
-using GlShader = GLHandle<GLuint, GlShaderDeleter>;
+using GlShader = GlHandle<GLuint, GlShaderDeleter>;
 
 struct GlProgramDeleter {
 	void operator()(GLuint id) const noexcept
@@ -98,4 +98,20 @@ struct GlProgramDeleter {
 		glDeleteProgram(id);
 	}
 };
-using GlProgram = GLHandle<GLuint, GlProgramDeleter>;
+using GlProgram = GlHandle<GLuint, GlProgramDeleter>;
+
+struct GlBufferDeleter {
+    void operator()(GLuint id) const noexcept
+    {
+        glDeleteBuffers(1, &id);
+    }
+};
+using GlBuffer = GlHandle<GLuint, GlBufferDeleter>;
+
+struct GlVertexArrayDeleter {
+    void operator()(GLuint id) const noexcept
+    {
+        glDeleteVertexArrays(1, &id);
+    }
+};
+using GlVertexArray = GlHandle<GLuint, GlVertexArrayDeleter>;

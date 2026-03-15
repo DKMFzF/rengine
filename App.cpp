@@ -1,5 +1,7 @@
 #include "App.hpp"
 #include "Shader.hpp"
+#include "Buffer.hpp"
+#include "VertexArray.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -26,19 +28,15 @@ float vertices[] = {
 };
 
 void App::run() {
-	// vao
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	VertexArray vao;
+	vao.bind();
 
-	// vbo
-	GLuint vbo;
-	glGenBuffers(1, &vbo);
+	VertexBuffer buffer{ vertices, sizeof(vertices) };
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+
+	vao.unbind();
 
 	Shader shader{ "main_v.glsl", "main_f.glsl" };
 
@@ -48,7 +46,7 @@ void App::run() {
 		render();
 		
 		shader.use();
-		glBindVertexArray(vao);
+		vao.bind();
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glfwSwapBuffers(m_window.get());
