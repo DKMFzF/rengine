@@ -129,8 +129,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VertexArray.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -142,14 +144,21 @@
   <ItemGroup>
     <ClInclude Include="App.hpp" />
     <ClInclude Include="Buffer.hpp" />
+    <ClInclude Include="Camera.hpp" />
     <ClInclude Include="Shader.hpp" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Texture.hpp" />
     <ClInclude Include="utils.hpp" />
     <ClInclude Include="VertexArray.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="awesomeface.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\glfw.3.4.0\build\native\glfw.targets" Condition="Exists('packages\glfw.3.4.0\build\native\glfw.targets')" />
     <Import Project="packages\glew.v140.1.12.0\build\native\glew.v140.targets" Condition="Exists('packages\glew.v140.1.12.0\build\native\glew.v140.targets')" />
+    <Import Project="packages\glm.1.0.3\build\native\glm.targets" Condition="Exists('packages\glm.1.0.3\build\native\glm.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -157,5 +166,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\glfw.3.4.0\build\native\glfw.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\glfw.3.4.0\build\native\glfw.targets'))" />
     <Error Condition="!Exists('packages\glew.v140.1.12.0\build\native\glew.v140.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\glew.v140.1.12.0\build\native\glew.v140.targets'))" />
+    <Error Condition="!Exists('packages\glm.1.0.3\build\native\glm.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\glm.1.0.3\build\native\glm.targets'))" />
   </Target>
 </Project>

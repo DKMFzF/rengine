@@ -1,5 +1,8 @@
 #include "Shader.hpp"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 Shader::Shader(const std::filesystem::path vertexFilePath, const std::filesystem::path fragmentFilePath) 
 	: m_program{glCreateProgram()} {
 	auto vertexCode = loadFile(vertexFilePath);
@@ -46,4 +49,10 @@ void Shader::linkProgram(const GlShader& vertex, const GlShader& fragment) {
 
 void Shader::use() const noexcept {
 	glUseProgram(m_program.get());
+}
+
+template<>
+void Shader::setUniform<glm::mat4>(const glm::mat4& value, const std::string& name) noexcept {
+	auto ptr = glGetUniformLocation(m_program.get(), name.c_str());
+	glUniformMatrix4fv(ptr, 1, GL_FALSE, glm::value_ptr(value));
 }

@@ -115,3 +115,11 @@ struct GlVertexArrayDeleter {
     }
 };
 using GlVertexArray = GlHandle<GLuint, GlVertexArrayDeleter>;
+
+struct GlTextureDeleter {
+    void operator()(GLuint id) const noexcept
+    {
+        glDeleteTextures(1, &id);
+    }
+};
+using GlTexture = GlHandle<GLuint, GlTextureDeleter>;

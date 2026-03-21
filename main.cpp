@@ -4,7 +4,7 @@
 
 int main() {
 	try {
-		auto app = App{ 800, 600, "Application" };
+		auto app = App{ 1280, 720, "Application" };
 		app.run();
 	}
 	catch (std::exception& ex) {
