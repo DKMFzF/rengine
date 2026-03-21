@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -123,3 +124,8 @@ struct GlTextureDeleter {
     }
 };
 using GlTexture = GlHandle<GLuint, GlTextureDeleter>;
+
+struct Vertex {
+    glm::vec3 position;
+    glm::vec2 tex_coords;
+};

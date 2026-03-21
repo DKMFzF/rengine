@@ -4,6 +4,7 @@
 
 class Texture {
 public:
+	Texture() = default;
 	Texture(const std::filesystem::path& filePath);
 
 	void bind() const noexcept;

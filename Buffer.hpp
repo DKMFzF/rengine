@@ -5,6 +5,8 @@
 template<GLenum type>
 class Buffer {
 public:
+	Buffer() = default;
+
 	Buffer(const void* data, size_t size) {
 		GLuint buffer;
 		glGenBuffers(1, &buffer);
