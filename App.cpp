@@ -4,6 +4,7 @@
 #include "VertexArray.hpp"
 #include "Texture.hpp"
 #include "Mesh.hpp"
+#include "Object.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -36,11 +37,16 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle) {
 
 void App::run() {
 
-	Texture texture{ "viking_room.png" };
-
 	Shader shader{ "main_v.glsl", "main_f.glsl" };
 
-	Mesh mesh{ "viking_room.obj" };
+	auto texture = std::make_shared<Texture>("viking_room.png");
+	auto mesh = std::make_shared<Mesh>("viking_room.obj");
+
+	Object room{ mesh, texture };
+	Object room2{ mesh, texture };
+
+	room.rotation() = { -90.0f, 0.0f, 180.0f };
+	room2.rotation() = { -90.0f, 0.0f, 180.0f };
 
 	while (m_running) {
 		updateWindow();
@@ -51,21 +57,17 @@ void App::run() {
 
 		auto view = m_camera.getView();
 
-		static int frame = 0;
-		frame++;
-		auto model = glm::mat4{ 1.0f };
-		//model = glm::rotate(model, (float)frame / 100.0f, glm::vec3{ 0.0, 1.0f, 0.0f });
-
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3{1.0, 0.0f, 0.0f});
-		model = glm::rotate(model, glm::radians(180.0f), glm::vec3{ 0.0, 0.0f, 1.0f });
+		if (m_input.getKey(GLFW_KEY_LEFT)) room.position() += glm::vec3{ -0.01f, 0.0f, 0.0f };
+		if (m_input.getKey(GLFW_KEY_RIGHT)) room.position() += glm::vec3{ 0.01f, 0.0f, 0.0f };
+		if (m_input.getKey(GLFW_KEY_UP)) room.position() += glm::vec3{ 0.0f, 0.0f, -0.01f };
+		if (m_input.getKey(GLFW_KEY_DOWN)) room.position() += glm::vec3{ 0.0f, 0.0f, 0.01f };
 
 		shader.use();
-		shader.setUniform(model, "model");
 		shader.setUniform(view, "view");
 		shader.setUniform(proj, "proj");
 
-		texture.bind();
-		mesh.draw();
+		room.draw(shader);
+		room2.draw(shader);
 
 		glfwSwapBuffers(m_window.get());
 	}
