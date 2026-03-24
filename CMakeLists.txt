@@ -34,16 +34,16 @@ add_executable(${PROJECT_NAME}
     sources/VertexArray.hpp
     sources/VertexArray.cpp
 
-    sources/stb_image.h
-    sources/tiny_obj_loader.h
-    sources/tiny_obj_loader.cc
-
     sources/components/Transform.hpp
     sources/components/Transform.cpp
     sources/components/Renderer.hpp
 
     sources/systems/RendererSystem.hpp
     sources/systems/RendererSystem.cpp
+
+    sources/third-party/stb_image.h
+    sources/third-party/tiny_obj_loader.h
+    sources/third-party/tiny_obj_loader.cc
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE sources)

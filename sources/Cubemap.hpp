@@ -2,7 +2,7 @@
 
 #include "utils.hpp"
 
-#include "stb_image.h"
+#include "third-party/stb_image.h"
 
 class Cubemap { };
 

@@ -9,7 +9,6 @@
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include "systems/RendererSystem.hpp"
-#include "tiny_obj_loader.h"
 
 App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
     : m_windowSize { windowWidth, windowHeight }

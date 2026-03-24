@@ -1,6 +1,6 @@
 #include "Mesh.hpp"
 
-#include "tiny_obj_loader.h"
+#include "third-party/tiny_obj_loader.h"
 
 Mesh::Mesh(const std::string& objPath) { loadObj(objPath); }
 

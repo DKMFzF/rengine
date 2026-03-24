@@ -1,7 +1,7 @@
 #include "Texture.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "third-party/stb_image.h"
 
 Texture::Texture(const std::filesystem::path& filePath)
 {
