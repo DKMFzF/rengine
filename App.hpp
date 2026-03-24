@@ -33,6 +33,7 @@ private:
 	Input m_input;
 	Camera m_camera{ glm::vec3{0.0f, 0.0f, 3.0f} };
 	
+	glm::ivec2 m_windowSize;
 	bool m_running = true;
 
 	bool m_firstMouse = true;

@@ -3,11 +3,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 Camera::Camera(const glm::vec3& position) : 
-	m_position{position},
-	m_front{0.0f, 0.0, -1.0f},
-	m_up{0.0f, 1.0f, 0.0f} {
-	
-}
+	m_position{ position },
+	m_front{ 0.0f, 0.0, -1.0f },
+	m_up{ 0.0f, 1.0f, 0.0f } { }
 
 void Camera::move(Direction dir) noexcept {
 	switch (dir) {

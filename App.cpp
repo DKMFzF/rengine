@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <vector>
 
-App::App(int windowWidth, int windowHeight, const std::string& windowTitle) {
+App::App(int windowWidth, int windowHeight, const std::string& windowTitle) : m_windowSize{ windowWidth, windowHeight } {
 	m_window = GlfwWindowPtr(glfwCreateWindow(windowWidth, windowHeight, windowTitle.c_str(), nullptr, nullptr));
 	if (m_window == nullptr) {
 		throw std::runtime_error{ "Failed to create GLFW window" };
@@ -50,38 +50,48 @@ void App::run() {
 	Shader shader{ "main_v.glsl", "main_f.glsl" };
 	Shader cubeShader{ "cubemap_v.glsl", "cubemap_f.glsl" };
 
-	auto roomMesh = std::make_shared<Mesh>("viking_room.obj");
-	auto planeMesh = std::make_shared<Mesh>("plane.obj");
-
 	auto skyboxVAO = VertexArray{};
 	skyboxVAO.bind();
 	auto skyboxBuffer = VertexBuffer{ skyboxVertices, sizeof(skyboxVertices) };
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	
+	auto roomMesh = std::make_shared<Mesh>("viking_room.obj");
+	auto planeMesh = std::make_shared<Mesh>("plane.obj");
+	auto obMesh = std::make_shared<Mesh>("ob.obj");
+	auto cubeMesh = std::make_shared<Mesh>("cube.obj");
 
 	auto roomTexture = std::make_shared<Texture>("viking_room.png");
 	auto floorTexture = std::make_shared<Texture>("floor.jpg");
+	auto grungeTexture = std::make_shared<Texture>("grunge.jpg");
+	auto rustTexture = std::make_shared<Texture>("rust.jpg");
 
 	Object room{ roomMesh, roomTexture };
-	Object room2{ roomMesh, roomTexture };
 	Object floor{ planeMesh, floorTexture };
+	Object ob{ obMesh, grungeTexture };
+	Object cube{ cubeMesh, rustTexture };
+
 	floor.scale() *= 2.5f;
 	floor.position() += glm::vec3{ 0.0f, -0.1f, 0.0f };
 
 	room.rotation() = { -90.0f, 0.0f, 180.0f };
-	room2.rotation() = { -90.0f, 0.0f, 180.0f };
+	room.position() = { 0.0f, 0.0f, -1.3f };
+
+	ob.position() = { 0.0f, 0.3f, 0.0f };
+	ob.rotation() = { 0.0f, -90.0f, 0.0f };
+
+	cube.position() = { 0.0f, 0.3f, 1.3f };
 
 	while (m_running) {
 		updateWindow();
 		processInput();
 		render();
 
-		if (m_input.getKey(GLFW_KEY_LEFT)) room.position() += glm::vec3{ -0.01f, 0.0f, 0.0f };
-		if (m_input.getKey(GLFW_KEY_RIGHT)) room.position() += glm::vec3{ 0.01f, 0.0f, 0.0f };
-		if (m_input.getKey(GLFW_KEY_UP)) room.position() += glm::vec3{ 0.0f, 0.0f, -0.01f };
-		if (m_input.getKey(GLFW_KEY_DOWN)) room.position() += glm::vec3{ 0.0f, 0.0f, 0.01f };
+		static float fov = 60.0f;
+		if (m_input.getKey(GLFW_KEY_UP)) fov -= 0.3f;
+		if (m_input.getKey(GLFW_KEY_DOWN)) fov += 0.3f;
 
-		auto proj = glm::perspective(glm::radians(80.0f), 1280.0f / 720.0f, 0.1f, 100.0f);
+		auto proj = glm::perspective(glm::radians(fov), (float)m_windowSize.x / m_windowSize.y, 0.1f, 100.0f);
 		auto& view = m_camera.getView();
 
 		{
@@ -102,8 +112,9 @@ void App::run() {
 		shader.setUniform(proj, "proj");
 
 		room.draw(shader);
-		room2.draw(shader);
 		floor.draw(shader);
+		ob.draw(shader);
+		cube.draw(shader);
 
 		glfwSwapBuffers(m_window.get());
 	}
