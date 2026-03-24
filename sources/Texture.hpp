@@ -4,14 +4,12 @@
 
 class Texture {
 public:
-	Texture() = default;
-	Texture(const std::filesystem::path& filePath);
+    Texture() = default;
+    Texture(const std::filesystem::path& filePath);
 
-	void bind() const noexcept;
-	void unbind() const noexcept;
+    void bind() const noexcept;
+    void unbind() const noexcept;
 
 private:
-	GlTexture m_texture;
-
+    GlTexture m_texture;
 };
-

@@ -4,13 +4,11 @@
 
 class VertexArray {
 public:
-	VertexArray();
+    VertexArray();
 
-	void bind() const noexcept;
-	void unbind() const noexcept;
+    void bind() const noexcept;
+    void unbind() const noexcept;
 
 private:
-	GlVertexArray m_vao;
-
+    GlVertexArray m_vao;
 };
-
