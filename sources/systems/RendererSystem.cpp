@@ -45,11 +45,26 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
     m_shader.use();
     m_shader.setUniform(view, "view");
     m_shader.setUniform(proj, "proj");
+
+    m_shader.setUniform(glm::vec3 { 0.2f, 0.2f, 0.2f }, "light.ambient");
+    m_shader.setUniform(glm::vec3 { 0.5f, 0.5f, 0.5f }, "light.diffuse");
+    m_shader.setUniform(glm::vec3 { 1.0f, 1.0f, 1.0f }, "light.specular");
+    m_shader.setUniform(m_camera.getPos(), "viewPos");
+
     for (auto [entity, transform, renderer] : objects.each()) {
         auto model = transform.getMatrix();
 
         m_shader.setUniform(model, "model");
-        renderer.texture->bind();
+
+        m_shader.setUniform(glm::vec3 { 0.8f, 0.8f, 0.8f }, "material.ambient");
+        m_shader.setUniform(glm::vec3 { 0.5f, 0.5f, 0.5f }, "material.specular");
+        m_shader.setUniform(0, "material.diffuse");
+        m_shader.setUniform(1, "material.specular");
+        m_shader.setUniform(32.0f, "material.shininess");
+
+        renderer.texture->bind(0);
+        renderer.specular->bind(1);
+
         renderer.mesh->draw();
     }
 }

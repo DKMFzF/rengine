@@ -1,4 +1,5 @@
 #include "Texture.hpp"
+#include "utils.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "third-party/stb_image.h"
@@ -29,8 +30,9 @@ Texture::Texture(const std::filesystem::path& filePath)
     stbi_image_free(data);
 }
 
-void Texture::bind() const noexcept
+void Texture::bind(int slot) const noexcept
 {
+    glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(GL_TEXTURE_2D, m_texture.get());
 }
 

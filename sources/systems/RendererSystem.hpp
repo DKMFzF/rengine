@@ -12,6 +12,7 @@ public:
     RendererSystem(entt::registry& registry, Camera& camera);
 
     void render(const glm::mat4& view, const glm::mat4& proj) noexcept;
+    Shader& getShader() noexcept { return m_shader; }
 
 private:
     entt::registry& m_registry;

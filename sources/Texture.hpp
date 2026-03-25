@@ -7,7 +7,7 @@ public:
     Texture() = default;
     Texture(const std::filesystem::path& filePath);
 
-    void bind() const noexcept;
+    void bind(int slot = 0) const noexcept;
     void unbind() const noexcept;
 
 private:

@@ -2,11 +2,11 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-Object::Object(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture)
+Object::Object(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular)
     : m_registry { registry }
     , m_entity { m_registry.create() }
     , m_transform { m_registry.emplace<Transform>(m_entity) }
-    , m_renderer { m_registry.emplace<Renderer>(m_entity, Renderer { mesh, texture }) }
+    , m_renderer { m_registry.emplace<Renderer>(m_entity, Renderer { mesh, texture, specular }) }
 {
 }
 

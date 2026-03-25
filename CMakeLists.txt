@@ -38,6 +38,7 @@ add_executable(${PROJECT_NAME}
     sources/components/Transform.hpp
     sources/components/Transform.cpp
     sources/components/Renderer.hpp
+    sources/components/Material.hpp
 
     sources/systems/RendererSystem.hpp
     sources/systems/RendererSystem.cpp

@@ -76,3 +76,11 @@ void Shader::setUniform<float>(const float& value,
     auto ptr = glGetUniformLocation(m_program.get(), name.c_str());
     glUniform1f(ptr, value);
 }
+
+template <>
+void Shader::setUniform<int>(const int& value,
+    const std::string& name) noexcept
+{
+    auto ptr = glGetUniformLocation(m_program.get(), name.c_str());
+    glUniform1i(ptr, value);
+}

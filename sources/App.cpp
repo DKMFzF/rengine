@@ -45,24 +45,26 @@ void App::run()
 {
     RendererSystem renderer { m_registry, m_camera };
 
-    Shader shader { "resources/shaders/main_v.glsl",
-        "resources/shaders/main_f.glsl" };
+    auto& shader = renderer.getShader();
 
     auto roomMesh = std::make_shared<Mesh>("resources/models/viking_room.obj");
     auto planeMesh = std::make_shared<Mesh>("resources/models/plane.obj");
     auto obMesh = std::make_shared<Mesh>("resources/models/ob.obj");
     auto cubeMesh = std::make_shared<Mesh>("resources/models/cube.obj");
 
+    auto whiteTexture = std::make_shared<Texture>("resources/images/white.png");
     auto roomTexture = std::make_shared<Texture>("resources/images/viking_room.png");
     auto floorTexture = std::make_shared<Texture>("resources/images/floor.jpg");
     auto grungeTexture = std::make_shared<Texture>("resources/images/grunge.jpg");
     auto rustTexture = std::make_shared<Texture>("resources/images/rust.jpg");
+    auto containerTexture = std::make_shared<Texture>("resources/images/container2.png");
+    auto containerSpecularTexture = std::make_shared<Texture>("resources/images/container2_specular.png");
 
-    Object floor { m_registry, planeMesh, floorTexture };
-    Object ob { m_registry, obMesh, grungeTexture };
+    Object floor { m_registry, planeMesh, floorTexture, whiteTexture };
+    Object ob { m_registry, cubeMesh, containerTexture, containerSpecularTexture };
 
     floor.scale() *= 2.5f;
-    floor.position() += glm::vec3 { 0.0f, -0.1f, 0.0f };
+    floor.position() += glm::vec3 { 0.0f, -0.2f, 0.0f };
 
     ob.position() = { 0.0f, 0.3f, 0.0f };
     ob.rotation() = { 0.0f, -90.0f, 0.0f };
@@ -74,7 +76,7 @@ void App::run()
     ImGui_ImplGlfw_InitForOpenGL(m_window.get(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    glm::vec3 lightPos { -15.0f, 8.0f, 15.0f };
+    glm::vec3 lightPos { -15.0f, 15.0f, 15.0f };
     while (m_running) {
         updateWindow();
 
@@ -101,17 +103,12 @@ void App::run()
             0.1f, 100.0f);
         auto& view = m_camera.getView();
 
-        shader.setUniform(m_camera.getPos(), "viewPos");
+        static int frame = 0;
 
-        shader.setUniform(glm::vec3 { 1.0f, 0.5f, 0.31f }, "material.ambient");
-        shader.setUniform(glm::vec3 { 1.0f, 0.5f, 0.31f }, "material.diffuse");
-        shader.setUniform(glm::vec3 { 0.5f, 0.5f, 0.5f }, "material.specular");
-        shader.setUniform(32.0f, "material.shininess");
+        frame++;
+        ob.rotation() = glm::vec3 { (float)frame, (float)frame * 1.5f, (float)frame * 1.7f } * 0.2f;
 
         shader.setUniform(lightPos, "light.position");
-        shader.setUniform(glm::vec3 { 0.2f, 0.2f, 0.2f }, "light.ambient");
-        shader.setUniform(glm::vec3 { 0.5f, 0.5f, 0.5f }, "light.diffuse");
-        shader.setUniform(glm::vec3 { 1.0f, 1.0f, 1.0f }, "light.specular");
 
         renderer.render(view, proj);
 
