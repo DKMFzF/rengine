@@ -49,7 +49,7 @@ void App::run()
     auto& shader = renderer.getShader();
 
     auto planeMesh = std::make_shared<Mesh>("resources/models/plane.obj");
-    auto cubeMesh = std::make_shared<Mesh>("resources/models/cube.obj");
+    auto obMesh = std::make_shared<Mesh>("resources/models/ob.obj");
 
     auto whiteTexture = std::make_shared<Texture>("resources/images/white.png");
     auto floorTexture = std::make_shared<Texture>("resources/images/floor.jpg");
@@ -57,8 +57,8 @@ void App::run()
     auto containerSpecularTexture = std::make_shared<Texture>("resources/images/container2_specular.png");
     auto windowTexture = std::make_shared<Texture>("resources/images/window.png");
 
-    Object floor { m_registry, planeMesh, floorTexture, whiteTexture };
-    Object cube { m_registry, cubeMesh, containerTexture, containerSpecularTexture };
+    Object floor { m_registry, planeMesh, whiteTexture, whiteTexture };
+    Object ob { m_registry, obMesh, containerTexture, whiteTexture };
     Object window { m_registry, planeMesh, windowTexture, whiteTexture };
     Object window1 { m_registry, planeMesh, windowTexture, whiteTexture };
     Object window2 { m_registry, planeMesh, windowTexture, whiteTexture };
@@ -66,8 +66,8 @@ void App::run()
     floor.scale() *= 2.5f;
     floor.position() += glm::vec3 { 0.0f, -0.2f, 0.0f };
 
-    cube.position() = { 2.0f, 0.3f, 0.0f };
-    cube.rotation() = { 0.0f, -90.0f, 0.0f };
+    ob.position() = { 2.0f, 0.3f, 0.0f };
+    ob.rotation() = { 0.0f, -90.0f, 0.0f };
 
     window.addComponent(Transparent { });
     window1.addComponent(Transparent { });
@@ -122,7 +122,7 @@ void App::run()
         static int frame = 0;
 
         frame++;
-        cube.rotation() = glm::vec3 { (float)frame, (float)frame * 1.5f, (float)frame * 1.7f } * 0.2f;
+        ob.rotation() = glm::vec3 { (float)frame, (float)frame * 1.5f, (float)frame * 1.7f } * 0.2f;
 
         shader.setUniform(lightPos, "light.position");
 
