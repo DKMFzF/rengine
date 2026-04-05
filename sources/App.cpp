@@ -2,7 +2,6 @@
 
 #include <GLFW/glfw3.h>
 #include <cmath>
-#include <cstdint>
 #include <entt/entity/fwd.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,6 +10,7 @@
 #include <stdexcept>
 
 #include "AABB.hpp"
+#include "Input.hpp"
 #include "Mesh.hpp"
 #include "Object.hpp"
 #include "Texture.hpp"
@@ -33,7 +33,6 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
     m_input.setGlfwWindow(m_window.get());
 
     glfwSetWindowUserPointer(m_window.get(), this);
-    glfwSetCursorPosCallback(m_window.get(), mouseCallback);
     glfwSetInputMode(m_window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwMakeContextCurrent(m_window.get());
@@ -166,25 +165,32 @@ void App::processInput() noexcept
         m_camera.move(Camera::Direction::Up);
     if (m_input.getKey(GLFW_KEY_LEFT_SHIFT))
         m_camera.move(Camera::Direction::Down);
-
     if (m_input.getKey(GLFW_KEY_ESCAPE))
         close();
 
+    if (m_input.getButton(GLFW_MOUSE_BUTTON_MIDDLE))
+        if (auto delta = m_input.getCursorDelta(); delta) {
+            float sensitivity = 0.1f;
+            auto xoffset = -delta->x * sensitivity;
+            auto yoffset = delta->y * sensitivity;
+
+            m_yaw += xoffset;
+            m_pitch += yoffset;
+
+            m_camera.rotate(m_yaw, m_pitch);
+        }
+
     m_camera.update();
-
-    static int last_state = 0;
-    bool click = false;
-    int state = glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_LEFT);
-    if (last_state != state) {
-        if (state == GLFW_PRESS)
-            click = true;
-
-        last_state = state;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
-    if (!click || io.WantCaptureMouse || glfwGetInputMode(m_window.get(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+    if (io.WantCaptureMouse || glfwGetInputMode(m_window.get(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+        return;
+
+    if (m_input.getButtonDown(GLFW_MOUSE_BUTTON_RIGHT))
+        m_registry.clear<Picked>();
+
+    if (!m_input.getButtonDown(GLFW_MOUSE_BUTTON_LEFT))
         return;
 
     m_registry.clear<Picked>();
@@ -264,31 +270,4 @@ void App::processInput() noexcept
     }
     if (picked)
         m_registry.emplace_or_replace<Picked>(picked.value());
-}
-
-void App::mouseCallback(GLFWwindow* window, double xpos, double ypos) noexcept
-{
-    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
-    if (app->m_firstMouse) {
-        app->m_lastX = xpos;
-        app->m_lastY = ypos;
-        app->m_firstMouse = false;
-    }
-
-    float xoffset = xpos - app->m_lastX;
-    float yoffset = app->m_lastY - ypos;
-    app->m_lastX = xpos;
-    app->m_lastY = ypos;
-
-    if (showCursor)
-        return;
-
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    app->m_yaw += xoffset;
-    app->m_pitch += yoffset;
-
-    app->m_camera.rotate(app->m_yaw, app->m_pitch);
 }

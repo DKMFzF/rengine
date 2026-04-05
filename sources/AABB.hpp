@@ -17,11 +17,6 @@ inline AABB toGlobalAABB(const AABB& aabb, const Transform& transform) noexcept
 {
     auto model = transform.getMatrix();
 
-    // auto model = glm::mat4 { 1.0f };
-    // model = glm::rotate(model, glm::radians(transform.rotation.x), { 1.0f, 0.0f, 0.0f });
-    // model = glm::rotate(model, glm::radians(transform.rotation.y), { 0.0f, 1.0f, 0.0f });
-    // model = glm::rotate(model, glm::radians(transform.rotation.z), { 0.0f, 0.0f, 1.0f });
-
     glm::vec3 corners[8] = {
         { aabb.min.x, aabb.min.y, aabb.min.z },
         { aabb.max.x, aabb.min.y, aabb.min.z },

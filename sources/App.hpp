@@ -25,10 +25,6 @@ private:
     App& operator=(App&&) = delete;
 
 private:
-    static void mouseCallback(GLFWwindow* window, double xpos,
-        double ypos) noexcept;
-
-private:
     GlfwContext m_glfwContext;
     GlfwWindowPtr m_window;
     Input m_input;
@@ -37,10 +33,6 @@ private:
 
     glm::ivec2 m_windowSize;
     bool m_running = true;
-
-    bool m_firstMouse = true;
-    double m_lastX { };
-    double m_lastY { };
 
     float m_yaw = -90.0f;
     float m_pitch = 0.0f;
