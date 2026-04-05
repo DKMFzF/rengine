@@ -12,6 +12,7 @@
 class Object {
 public:
     Object(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular);
+    ~Object() { m_registry.destroy(m_entity); };
 
     void draw(Shader& shader) const noexcept;
 

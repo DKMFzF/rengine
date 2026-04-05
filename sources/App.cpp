@@ -114,9 +114,17 @@ void App::run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Settings");
-        ImGui::DragFloat3("lightPos", glm::value_ptr(lightPos));
-        ImGui::End();
+        auto pickedView = m_registry.view<Picked, Transform>();
+        if (pickedView.size_hint() > 0) {
+            auto entity = pickedView.front();
+            auto& transform = m_registry.get<Transform>(entity);
+
+            ImGui::Begin("Transform");
+            ImGui::DragFloat3("position", glm::value_ptr(transform.position), 0.025f);
+            ImGui::DragFloat3("rotation", glm::value_ptr(transform.rotation), 0.025f);
+            ImGui::DragFloat3("scale", glm::value_ptr(transform.scale), 0.025f);
+            ImGui::End();
+        }
 
         ImGui::Render();
 
@@ -124,11 +132,6 @@ void App::run()
             (float)m_windowSize.x / m_windowSize.y,
             0.1f, 100.0f);
         auto& view = m_camera.getView();
-
-        static int frame = 0;
-
-        frame++;
-        ob.rotation() = glm::vec3 { (float)frame, (float)frame * 1.5f, (float)frame * 1.7f } * 0.2f;
 
         shader.setUniform(lightPos, "light.position");
 
