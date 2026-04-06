@@ -33,7 +33,6 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
     m_input.setGlfwWindow(m_window.get());
 
     glfwSetWindowUserPointer(m_window.get(), this);
-    glfwSetInputMode(m_window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwMakeContextCurrent(m_window.get());
     glewExperimental = true;
@@ -114,15 +113,21 @@ void App::run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        auto pickedView = m_registry.view<Picked, Transform>();
+        auto pickedView = m_registry.view<Picked, Transform, Renderer>();
         if (pickedView.size_hint() > 0) {
             auto entity = pickedView.front();
-            auto& transform = m_registry.get<Transform>(entity);
+            auto [transform, renderer] = m_registry.get<Transform, Renderer>(entity);
 
-            ImGui::Begin("Transform");
+            ImGui::Begin("Inspector");
+
+            ImGui::SeparatorText("Transform");
             ImGui::DragFloat3("position", glm::value_ptr(transform.position), 0.025f);
-            ImGui::DragFloat3("rotation", glm::value_ptr(transform.rotation), 0.025f);
+            ImGui::DragFloat3("rotation", glm::value_ptr(transform.rotation), 0.5f);
             ImGui::DragFloat3("scale", glm::value_ptr(transform.scale), 0.025f);
+
+            ImGui::SeparatorText("Transform");
+            ImGui::Checkbox("Draw AABB", &renderer.drawAABB);
+
             ImGui::End();
         }
 

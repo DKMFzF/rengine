@@ -39,7 +39,9 @@ RendererSystem::RendererSystem(entt::registry& registry, Camera& camera)
     glEnableVertexAttribArray(0);
 }
 
-std::array<Line, 12> toLines(const BoundingBox& aabb) noexcept;
+std::array<Line, 12> toLines(const BoundingBox& aabb, const Transform& transform) noexcept;
+std::array<Line, 12> toLinesAligned(const BoundingBox& aabb, const Transform& transform) noexcept;
+
 void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexcept
 {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -118,23 +120,66 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
     m_linesShader.setUniform(proj, "proj");
 
     LineBatch lines { };
-    for (auto [_, aabb, transform] : m_registry.view<BoundingBox, Transform, Picked>().each()) {
+    for (auto [_, bb, transform, renderer] : m_registry.view<BoundingBox, Transform, Renderer, Picked>().each()) {
         auto model = glm::mat4 { 1.0f };
         model = glm::translate(model, transform.position);
         model = glm::scale(model, transform.scale);
 
-        auto alignedAABB = toGlobalAABB(aabb, transform);
-
-        auto alignedLinesArray = toLines(alignedAABB);
-        for (const auto& line : alignedLinesArray) {
+        auto linesArray = toLines(bb, transform);
+        for (const auto& line : linesArray) {
             lines.pushLine(line);
+        }
+
+        if (renderer.drawAABB) {
+            auto aabb = toGlobalAABB(bb, transform);
+            auto alignedLinesArray = toLinesAligned(aabb, transform);
+            for (const auto& line : alignedLinesArray) {
+                lines.pushLine(line);
+            }
         }
     }
 
     lines.draw();
 }
 
-std::array<Line, 12> toLines(const BoundingBox& aabb) noexcept
+std::array<Line, 12> toLines(const BoundingBox& aabb, const Transform& transform) noexcept
+{
+    auto model = transform.getMatrix();
+
+    glm::vec3 corners[] = {
+        { aabb.min.x, aabb.min.y, aabb.min.z },
+        { aabb.max.x, aabb.min.y, aabb.min.z },
+        { aabb.min.x, aabb.max.y, aabb.min.z },
+        { aabb.max.x, aabb.max.y, aabb.min.z },
+        { aabb.min.x, aabb.min.y, aabb.max.z },
+        { aabb.max.x, aabb.min.y, aabb.max.z },
+        { aabb.min.x, aabb.max.y, aabb.max.z },
+        { aabb.max.x, aabb.max.y, aabb.max.z }
+    };
+
+    std::array<Line, 12> result;
+    result[0] = { corners[0], corners[1] };
+    result[1] = { corners[1], corners[3] };
+    result[2] = { corners[3], corners[2] };
+    result[3] = { corners[2], corners[0] };
+    result[4] = { corners[4], corners[5] };
+    result[5] = { corners[5], corners[7] };
+    result[6] = { corners[7], corners[6] };
+    result[7] = { corners[6], corners[4] };
+    result[8] = { corners[0], corners[4] };
+    result[9] = { corners[1], corners[5] };
+    result[10] = { corners[2], corners[6] };
+    result[11] = { corners[3], corners[7] };
+
+    for (auto& line : result) {
+        line.p1 = glm::vec3 { model * glm::vec4 { line.p1, 1.0f } };
+        line.p2 = glm::vec3 { model * glm::vec4 { line.p2, 1.0f } };
+    }
+
+    return result;
+}
+
+std::array<Line, 12> toLinesAligned(const BoundingBox& aabb, const Transform& transform) noexcept
 {
     glm::vec3 corners[] = {
         { aabb.min.x, aabb.min.y, aabb.min.z },
