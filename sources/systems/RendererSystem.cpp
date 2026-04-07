@@ -1,6 +1,8 @@
 #include "RendererSystem.hpp"
 #include "BoundingBox.hpp"
+#include "Camera.hpp"
 #include "Cubemap.hpp"
+#include "Frustum.hpp"
 #include "LineBatch.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
@@ -9,6 +11,7 @@
 #include <array>
 #include <entt/entity/fwd.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <imgui.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
@@ -62,6 +65,8 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
     m_shader.setUniform(view, "view");
     m_shader.setUniform(proj, "proj");
 
+    Frustum frustum { proj * view };
+
     glm::vec3 lightPos { -15.0f, 15.0f, 15.0f };
     m_shader.setUniform(lightPos, "light.position");
     m_shader.setUniform(glm::vec3 { 0.2f, 0.2f, 0.2f }, "light.ambient");
@@ -72,10 +77,15 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    auto objects = m_registry.view<Transform, Renderer>(entt::exclude<Transparent>);
-    for (auto [entity, transform, renderer] : objects.each()) {
-        auto model = transform.getMatrix();
+    int drawed = 0;
+    auto objects = m_registry.view<Transform, Renderer, BoundingBox>(entt::exclude<Transparent>);
+    for (auto [entity, transform, renderer, bb] : objects.each()) {
+        auto aabb = toGlobalAABB(bb, transform);
+        if (!frustum.isVisible(aabb))
+            continue;
+        drawed++;
 
+        auto model = transform.getMatrix();
         m_shader.setUniform(model, "model");
 
         m_shader.setUniform(glm::vec3 { 0.8f, 0.8f, 0.8f }, "material.ambient");
@@ -94,7 +104,7 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
     m_transparentShader.setUniform(view, "view");
     m_transparentShader.setUniform(proj, "proj");
 
-    auto tobjects = m_registry.view<Transform, Renderer, Transparent>();
+    auto tobjects = m_registry.view<Transform, Renderer, Transparent, BoundingBox>();
     std::vector<std::pair<float, entt::entity>> sorted;
     for (auto entity : tobjects) {
         auto& transform = tobjects.get<Transform>(entity);
@@ -106,12 +116,22 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
     });
 
     for (auto [_, entity] : sorted) {
-        auto [transform, renderer] = tobjects.get<Transform, Renderer>(entity);
+        auto [transform, renderer, bb] = tobjects.get<Transform, Renderer, BoundingBox>(entity);
+
+        auto aabb = toGlobalAABB(bb, transform);
+        if (!frustum.isVisible(aabb))
+            continue;
+        drawed++;
+
         auto model = transform.getMatrix();
         m_transparentShader.setUniform(model, "model");
         renderer.texture->bind();
         renderer.mesh->draw();
     }
+
+    ImGui::Begin("Render");
+    ImGui::Text("%d objects drawed", drawed);
+    ImGui::End();
 
     glClear(GL_DEPTH_BUFFER_BIT);
 

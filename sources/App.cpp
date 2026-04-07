@@ -130,9 +130,7 @@ void App::run()
 
             ImGui::End();
         }
-
-        ImGui::Render();
-
+        
         auto proj = glm::perspective(glm::radians(60.0f),
             (float)m_windowSize.x / m_windowSize.y,
             0.1f, 100.0f);
@@ -142,6 +140,7 @@ void App::run()
 
         renderer.render(view, proj);
 
+        ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         m_input.update();

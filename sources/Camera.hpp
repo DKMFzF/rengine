@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 
+#include <array>
 #include <chrono>
 
 class Camera {

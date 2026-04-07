@@ -23,7 +23,6 @@ add_executable(${PROJECT_NAME}
     sources/Camera.hpp
     sources/Camera.cpp
     sources/Cubemap.hpp
-    sources/Cubemap.cpp
     sources/Mesh.hpp
     sources/Mesh.cpp
     sources/Object.hpp
