@@ -9,6 +9,18 @@
 #include <optional>
 #include <stdexcept>
 
+#include <Jolt/Jolt.h>
+
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/Memory.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Math/Real.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/PhysicsSettings.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/RegisterTypes.h>
+
 #include "BoundingBox.hpp"
 #include "Input.hpp"
 #include "Mesh.hpp"
@@ -16,6 +28,7 @@
 #include "Texture.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
+#include "systems/PhysicsEngine.hpp"
 #include "systems/RendererSystem.hpp"
 
 #include "imgui.h"
@@ -23,7 +36,8 @@
 #include "imgui_impl_opengl3.h"
 
 App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
-    : m_windowSize { windowWidth, windowHeight }
+    : m_registry { }
+    , m_windowSize { windowWidth, windowHeight }
 {
     m_window = GlfwWindowPtr(glfwCreateWindow(
         windowWidth, windowHeight, windowTitle.c_str(), nullptr, nullptr));
@@ -47,6 +61,17 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
 static bool showCursor = false;
 void App::run()
 {
+    JPH::RegisterDefaultAllocator();
+    JPH::Factory::sInstance = new JPH::Factory { };
+    JPH::RegisterTypes();
+    JPH::TempAllocatorImpl tempAllocator { 10 * 1024 * 1024 };
+    JPH::JobSystemThreadPool jobSystem {
+        JPH::cMaxPhysicsJobs,
+        JPH::cMaxPhysicsBarriers,
+        (int)std::thread::hardware_concurrency()
+    };
+    PhysicsEngine m_physics { m_registry, tempAllocator, jobSystem };
+
     RendererSystem renderer { m_registry, m_camera };
 
     auto& shader = renderer.getShader();
@@ -60,15 +85,17 @@ void App::run()
     auto containerSpecularTexture = std::make_shared<Texture>("resources/images/container2_specular.png");
     auto windowTexture = std::make_shared<Texture>("resources/images/window.png");
 
-    Object floor { m_registry, planeMesh, whiteTexture, whiteTexture };
+    Object floor { m_registry, planeMesh, floorTexture, whiteTexture };
     Object ob { m_registry, obMesh, containerTexture, whiteTexture };
     Object window { m_registry, planeMesh, windowTexture, whiteTexture };
     Object window1 { m_registry, planeMesh, windowTexture, whiteTexture };
     Object window2 { m_registry, planeMesh, windowTexture, whiteTexture };
 
+    floor.addComponent(m_physics.createPlane());
     floor.scale() *= 2.5f;
     floor.position() += glm::vec3 { 0.0f, -0.2f, 0.0f };
 
+    ob.addComponent(m_physics.createCube());
     ob.position() = { 2.0f, 0.3f, 0.0f };
     ob.rotation() = { 0.0f, -90.0f, 0.0f };
 
@@ -101,6 +128,7 @@ void App::run()
 
     while (m_running) {
         updateWindow();
+        m_physics.update();
 
         processInput();
 
@@ -130,7 +158,7 @@ void App::run()
 
             ImGui::End();
         }
-        
+
         auto proj = glm::perspective(glm::radians(60.0f),
             (float)m_windowSize.x / m_windowSize.y,
             0.1f, 100.0f);

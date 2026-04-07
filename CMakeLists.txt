@@ -10,6 +10,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(Jolt CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     sources/main.cpp
@@ -41,9 +42,12 @@ add_executable(${PROJECT_NAME}
     sources/components/Transform.cpp
     sources/components/Renderer.hpp
     sources/components/Material.hpp
+    sources/components/Body.hpp
 
     sources/systems/RendererSystem.hpp
     sources/systems/RendererSystem.cpp
+    sources/systems/PhysicsEngine.hpp
+    sources/systems/PhysicsEngine.cpp
 
     sources/third-party/stb_image.h
     sources/third-party/tiny_obj_loader.h
@@ -58,4 +62,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     glm::glm
     EnTT::EnTT
     imgui::imgui
+    Jolt::Jolt
 )

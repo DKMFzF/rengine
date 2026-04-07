@@ -28,6 +28,7 @@ private:
     GlfwContext m_glfwContext;
     GlfwWindowPtr m_window;
     Input m_input;
+    
     Camera m_camera { glm::vec3 { 0.0f, 0.0f, 3.0f } };
     entt::registry m_registry;
 
