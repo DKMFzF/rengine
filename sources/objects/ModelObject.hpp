@@ -5,11 +5,9 @@
 #include "Mesh.hpp"
 #include "Texture.hpp"
 
-
-
-class Model : public Object {
+class ModelObject : public Object {
 public:
-    Model(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular);
+    ModelObject(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular);
 
     glm::vec3& position() noexcept;
     glm::vec3& rotation() noexcept;
@@ -18,5 +16,4 @@ public:
     const glm::vec3& position() const noexcept;
     const glm::vec3& rotation() const noexcept;
     const glm::vec3& scale() const noexcept;
-
 };

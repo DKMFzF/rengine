@@ -11,6 +11,7 @@ find_package(glm CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(Jolt CONFIG REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     sources/main.cpp
@@ -44,8 +45,8 @@ add_executable(${PROJECT_NAME}
 
     sources/objects/FlyingCamera.hpp
     sources/objects/FlyingCamera.cpp
-    sources/objects/Model.hpp
-    sources/objects/Model.cpp
+    sources/objects/ModelObject.hpp
+    sources/objects/ModelObject.cpp
 
     sources/components/Transform.hpp
     sources/components/Transform.cpp
@@ -76,4 +77,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     EnTT::EnTT
     imgui::imgui
     Jolt::Jolt
+    assimp::assimp
 )

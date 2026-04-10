@@ -34,7 +34,7 @@
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
 #include "objects/FlyingCamera.hpp"
-#include "objects/Model.hpp"
+#include "objects/ModelObject.hpp"
 #include "systems/Clock.hpp"
 #include "systems/PhysicsEngine.hpp"
 #include "systems/RendererSystem.hpp"
@@ -120,11 +120,11 @@ void App::run()
     auto containerSpecularTexture = std::make_shared<Texture>("resources/images/container2_specular.png");
     auto windowTexture = std::make_shared<Texture>("resources/images/window.png");
 
-    Model floor0 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Model floor1 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Model floor2 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Model floor3 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Model floor { m_registry, cubeMesh, floorTexture, whiteTexture };
+    ModelObject floor0 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    ModelObject floor1 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    ModelObject floor2 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    ModelObject floor3 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    ModelObject floor { m_registry, cubeMesh, floorTexture, whiteTexture };
 
     floor0.position() = { 0.0f, 0.0f, -5.0f };
     floor1.position() = { 0.0f, 0.0f, 5.0f };
@@ -152,7 +152,7 @@ void App::run()
     physics.createCollider(floor3.getEntity(), false);
 
     constexpr auto COUNT = 100;
-    std::vector<Model> cubes;
+    std::vector<ModelObject> cubes;
     cubes.reserve(COUNT);
     for (int i = 0; i < COUNT; i++) {
         auto& cube = cubes.emplace_back(m_registry, cubeMesh, containerTexture, containerSpecularTexture);
