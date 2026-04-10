@@ -31,6 +31,8 @@ add_executable(${PROJECT_NAME}
 
     sources/Mesh.hpp
     sources/Mesh.cpp
+    sources/Model.hpp
+    sources/Model.cpp
     sources/Object.hpp
     sources/Object.cpp
     sources/Shader.hpp

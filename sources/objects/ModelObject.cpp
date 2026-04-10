@@ -1,14 +1,15 @@
 #include "ModelObject.hpp"
+#include "Model.hpp"
 #include "Object.hpp"
 
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
 
-ModelObject::ModelObject(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular)
+ModelObject::ModelObject(entt::registry& registry, std::shared_ptr<Model> model, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular)
     : Object(registry)
 {
-    addComponent(Renderer { mesh, texture, specular });
-    addComponent(mesh->getAABB());
+    addComponent(Renderer { model, texture, specular });
+    addComponent(model->getAABB());
 }
 
 glm::vec3& ModelObject::position() noexcept { return getComponent<Transform>().position; }

@@ -26,7 +26,6 @@
 #include "BoundingBox.hpp"
 #include "Events.hpp"
 #include "Input.hpp"
-#include "Mesh.hpp"
 #include "RenderTexture.hpp"
 #include "Texture.hpp"
 #include "components/Body.hpp"
@@ -42,7 +41,6 @@
 #include <cstdlib>
 #include <memory>
 #include <stdexcept>
-#include <vector>
 
 float random(float min, float max)
 {
@@ -101,7 +99,7 @@ void App::run()
     auto& input = m_registry.ctx().get<Input>();
     auto& physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
 
-    FlyingCamera _cam = { m_registry, glm::vec3 { 10.0f, 10.0f, 10.0f } };
+    FlyingCamera _cam = { m_registry, glm::vec3 { 0.0f, 0.0f, 0.0f } };
     auto& flyCamera = m_registry.ctx().emplace<std::reference_wrapper<FlyingCamera>>(_cam).get();
 
     auto renderTex = m_registry.ctx().emplace<std::shared_ptr<RenderTexture>>(std::make_shared<RenderTexture>(glm::ivec2 { 500, 300 }));
@@ -110,55 +108,13 @@ void App::run()
 
     auto& shader = renderer.getShader();
 
-    auto planeMesh = std::make_shared<Mesh>("resources/models/plane.obj");
-    auto obMesh = std::make_shared<Mesh>("resources/models/ob.obj");
-    auto cubeMesh = std::make_shared<Mesh>("resources/models/cube.obj");
-
+    auto rocketModel = std::make_shared<Model>("resources/rocket/scene.gltf");
+    auto rocketTexture = std::make_shared<Texture>("resources/rocket/textures/main_SMR_baseColor.jpeg");
     auto whiteTexture = std::make_shared<Texture>("resources/images/white.png");
-    auto floorTexture = std::make_shared<Texture>("resources/images/floor.jpg");
-    auto containerTexture = std::make_shared<Texture>("resources/images/container2.png");
-    auto containerSpecularTexture = std::make_shared<Texture>("resources/images/container2_specular.png");
-    auto windowTexture = std::make_shared<Texture>("resources/images/window.png");
 
-    ModelObject floor0 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    ModelObject floor1 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    ModelObject floor2 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    ModelObject floor3 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    ModelObject floor { m_registry, cubeMesh, floorTexture, whiteTexture };
+    ModelObject rocket { m_registry, rocketModel, rocketTexture, whiteTexture };
 
-    floor0.position() = { 0.0f, 0.0f, -5.0f };
-    floor1.position() = { 0.0f, 0.0f, 5.0f };
-    floor2.position() = { 5.0f, 0.0f, 0.0f };
-    floor3.position() = { -5.0f, 0.0f, 0.0f };
-
-    floor0.scale() = { 20.0f, .2f, 20.0f };
-    floor1.scale() = { 20.0f, .2f, 20.0f };
-    floor2.scale() = { 20.0f, .2f, 20.0f };
-    floor3.scale() = { 20.0f, .2f, 20.0f };
-
-    floor0.rotation() = { 45.0f, 0.f, 0.f };
-    floor1.rotation() = { -45.0f, 0.f, 0.f };
-    floor2.rotation() = { 0.f, 0.f, 45.f };
-    floor3.rotation() = { 0.f, 0.f, -45.f };
-
-    floor.position() = { 0.0f, -4.0f, 0.0f };
-
-    floor.scale() = { 5.0f, .2f, 5.0f };
-
-    physics.createCollider(floor.getEntity(), false);
-    physics.createCollider(floor0.getEntity(), false);
-    physics.createCollider(floor1.getEntity(), false);
-    physics.createCollider(floor2.getEntity(), false);
-    physics.createCollider(floor3.getEntity(), false);
-
-    constexpr auto COUNT = 100;
-    std::vector<ModelObject> cubes;
-    cubes.reserve(COUNT);
-    for (int i = 0; i < COUNT; i++) {
-        auto& cube = cubes.emplace_back(m_registry, cubeMesh, containerTexture, containerSpecularTexture);
-        cube.position() = { random(-5.0, 5.0), random(25.0, 200.0), random(-5.0, 5.0) };
-        physics.createCollider(cube.getEntity());
-    }
+    physics.createCollider(rocket.getEntity(), false);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -320,6 +276,8 @@ void App::windowCloseCallback(GLFWwindow* window) noexcept
 
 void App::framebufferSizeCallback(GLFWwindow* window, int width, int height) noexcept
 {
+    if (width == 0 || height == 0)
+        return;
     auto& app = *static_cast<App*>(glfwGetWindowUserPointer(window));
     app.m_windowSize = { width, height };
     app.m_dispatcher.trigger<Event::WindowResize>({ { app.m_windowSize } });

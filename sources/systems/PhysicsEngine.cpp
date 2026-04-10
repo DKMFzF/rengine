@@ -15,6 +15,7 @@
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/PlaneShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/RegisterTypes.h>
@@ -67,6 +68,7 @@ void PhysicsEngine::createCollider(entt::entity entity, bool dynamic)
     auto bb = bb_;
     auto model = glm::mat4 { 1.0f };
     model = glm::scale(model, transform.scale);
+
     bb.min = model * glm::vec4 { bb.min, 1.0f };
     bb.max = model * glm::vec4 { bb.max, 1.0f };
 
@@ -75,9 +77,18 @@ void PhysicsEngine::createCollider(entt::entity entity, bool dynamic)
     glm::quat quat = transform.getQuat();
     auto rotation = JPH::Quat { quat.x, quat.y, quat.z, quat.w };
 
-    JPH::BoxShapeSettings box_shape(size);
+    glm::vec3 offset = (bb.min + bb.max) * 0.5f;
+
+    JPH::Ref<JPH::BoxShape> box_shape = new JPH::BoxShape(
+        size);
+
+    JPH::Ref<JPH::Shape> shape = new JPH::RotatedTranslatedShape(
+        JPH::Vec3(offset.x, offset.y, offset.z),
+        JPH::Quat::sIdentity(),
+        box_shape);
+
     JPH::BodyCreationSettings box_settings(
-        box_shape.Create().Get(),
+        shape,
         position,
         rotation,
         dynamic ? JPH::EMotionType::Dynamic : JPH::EMotionType::Static,

@@ -42,8 +42,6 @@ RendererSystem::RendererSystem(entt::registry& registry)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
         (void*)0);
     glEnableVertexAttribArray(0);
-
-    
 }
 
 std::array<Line, 12> toLines(const BoundingBox& aabb, const Transform& transform) noexcept;
@@ -114,7 +112,7 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
         renderer.texture->bind(0);
         renderer.specular->bind(1);
 
-        renderer.mesh->draw();
+        renderer.model->draw();
     }
 
     m_transparentShader.use();
@@ -144,7 +142,7 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
         auto model = transform.getMatrix();
         m_transparentShader.setUniform(model, "model");
         renderer.texture->bind();
-        renderer.mesh->draw();
+        renderer.model->draw();
     }
 #endif
 

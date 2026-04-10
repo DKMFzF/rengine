@@ -1,13 +1,13 @@
 #pragma once
 
+#include "Model.hpp"
 #include "Object.hpp"
 
-#include "Mesh.hpp"
 #include "Texture.hpp"
 
 class ModelObject : public Object {
 public:
-    ModelObject(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular);
+    ModelObject(entt::registry& registry, std::shared_ptr<Model> model, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular);
 
     glm::vec3& position() noexcept;
     glm::vec3& rotation() noexcept;
