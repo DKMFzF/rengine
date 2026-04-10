@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <entt/entt.hpp>
 #include <string>
 
@@ -18,16 +20,21 @@ private:
     void close() noexcept;
 
 private:
+    static void windowCloseCallback(GLFWwindow* window) noexcept;
+    static void framebufferSizeCallback(GLFWwindow* window, int width, int height) noexcept;
+
+private:
     App(const App&) = delete;
     App& operator=(const App&) = delete;
     App(App&&) = delete;
     App& operator=(App&&) = delete;
 
 private:
+    entt::registry m_registry;
+    entt::dispatcher m_dispatcher;
+
     GlfwContext m_glfwContext;
     GlfwWindowPtr m_window;
-
-    entt::registry m_registry;
 
     glm::ivec2 m_windowSize;
     bool m_running = true;

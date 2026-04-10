@@ -15,6 +15,7 @@ find_package(Jolt CONFIG REQUIRED)
 add_executable(${PROJECT_NAME}
     sources/main.cpp
     sources/utils.hpp
+    sources/Events.hpp
 
     sources/App.cpp
     sources/App.hpp

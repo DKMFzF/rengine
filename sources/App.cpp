@@ -14,6 +14,7 @@
 
 #include <GLFW/glfw3.h>
 #include <entt/entity/fwd.hpp>
+#include <entt/signal/fwd.hpp>
 #include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -23,6 +24,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include "BoundingBox.hpp"
+#include "Events.hpp"
 #include "Input.hpp"
 #include "Mesh.hpp"
 #include "RenderTexture.hpp"
@@ -39,7 +41,6 @@
 
 #include <cstdlib>
 #include <memory>
-#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -54,9 +55,12 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+#if 1 // fullscreen
     m_windowSize = { mode->width, mode->height };
-    m_window = GlfwWindowPtr(glfwCreateWindow(
-        mode->width, mode->height, windowTitle.c_str(), monitor, nullptr));
+    m_window = GlfwWindowPtr(glfwCreateWindow(m_windowSize.x, m_windowSize.y, windowTitle.c_str(), monitor, nullptr));
+#else
+    m_window = GlfwWindowPtr(glfwCreateWindow(m_windowSize.x, m_windowSize.y, windowTitle.c_str(), nullptr, nullptr));
+#endif
     if (m_window == nullptr) {
         throw std::runtime_error { "Failed to create GLFW window" };
     }
@@ -74,6 +78,9 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
     auto& input = m_registry.ctx().emplace<Input>();
     input.setGlfwWindow(m_window.get());
     m_registry.ctx().emplace<Clock>();
+
+    glfwSetWindowCloseCallback(m_window.get(), windowCloseCallback);
+    glfwSetFramebufferSizeCallback(m_window.get(), framebufferSizeCallback);
 }
 
 static bool showCursor = false;
@@ -81,7 +88,6 @@ static float fov = 60.0f;
 static float n_f[2] = { 0.1f, 100.0f };
 void App::run()
 {
-
     JPH::RegisterDefaultAllocator();
     JPH::Factory::sInstance = new JPH::Factory { };
     JPH::RegisterTypes();
@@ -303,4 +309,18 @@ void App::processInput(const glm::mat4& viewMatrix, const glm::vec3& cameraPos) 
     auto picked = physics.pick(ray);
     if (picked)
         m_registry.emplace_or_replace<Picked>(picked.value());
+}
+
+void App::windowCloseCallback(GLFWwindow* window) noexcept
+{
+    auto& app = *static_cast<App*>(glfwGetWindowUserPointer(window));
+    app.close();
+    app.m_dispatcher.trigger<Event::WindowClose>();
+}
+
+void App::framebufferSizeCallback(GLFWwindow* window, int width, int height) noexcept
+{
+    auto& app = *static_cast<App*>(glfwGetWindowUserPointer(window));
+    app.m_windowSize = { width, height };
+    app.m_dispatcher.trigger<Event::WindowResize>({ { app.m_windowSize } });
 }
