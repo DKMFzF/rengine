@@ -1,16 +1,17 @@
 {
-  "dependencies": [
-    "entt",
-    "glew",
-    "glfw3",
-    "glm",
-    {
-      "name": "imgui",
-      "features": [
-        "glfw-binding",
-        "opengl3-binding"
-      ]
-    },
-    "joltphysics"
-  ]
+    "dependencies": [
+        "entt",
+        "glew",
+        "glfw3",
+        "glm",
+        {
+            "name": "imgui",
+            "features": [
+                "glfw-binding",
+                "opengl3-binding",
+                "docking-experimental"
+            ]
+        },
+        "joltphysics"
+    ]
 }

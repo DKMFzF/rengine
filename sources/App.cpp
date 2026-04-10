@@ -14,6 +14,7 @@
 
 #include <GLFW/glfw3.h>
 #include <entt/entity/fwd.hpp>
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -49,8 +50,11 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
     : m_registry { }
     , m_windowSize { windowWidth, windowHeight }
 {
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    m_windowSize = { mode->width, mode->height };
     m_window = GlfwWindowPtr(glfwCreateWindow(
-        windowWidth, windowHeight, windowTitle.c_str(), nullptr, nullptr));
+        mode->width, mode->height, windowTitle.c_str(), monitor, nullptr));
     if (m_window == nullptr) {
         throw std::runtime_error { "Failed to create GLFW window" };
     }
@@ -63,7 +67,7 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
         throw std::runtime_error { "Failed to init GLEW" };
     }
 
-    glViewport(0, 0, windowWidth, windowHeight);
+    glViewport(0, 0, m_windowSize.x, m_windowSize.y);
     glEnable(GL_DEPTH_TEST);
 
     auto& input = m_registry.ctx().emplace<Input>();
@@ -72,6 +76,8 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
 }
 
 static bool showCursor = false;
+static float fov = 60.0f;
+static float n_f[2] = { 0.1f, 100.0f };
 void App::run()
 {
 
@@ -85,12 +91,11 @@ void App::run()
         (int)std::thread::hardware_concurrency()
     };
 
-    PhysicsEngine& m_physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
-
     auto& input = m_registry.ctx().get<Input>();
-    auto& physics = m_registry.ctx().get<PhysicsEngine>();
+    auto& physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
 
-    FlyingCamera camera { m_registry, { 10.0f, 10.0f, 10.0f } };
+    FlyingCamera _cam = { m_registry, glm::vec3 { 10.0f, 10.0f, 10.0f } };
+    auto& camera = m_registry.ctx().emplace<std::reference_wrapper<FlyingCamera>>(_cam).get();
 
     RendererSystem renderer { m_registry };
 
@@ -150,19 +155,16 @@ void App::run()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     ImGui_ImplGlfw_InitForOpenGL(m_window.get(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    glm::vec3 lightPos { -15.0f, 15.0f, 15.0f };
     while (m_running) {
         updateWindow();
         m_registry.ctx().get<Clock>().update();
         physics.update();
         camera.update();
 
-        auto proj = glm::perspective(glm::radians(60.0f),
-            (float)m_windowSize.x / m_windowSize.y,
-            0.1f, 100.0f);
         auto cameraEntity = m_registry.view<Camera, Transform>().front();
         auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
         auto view = camera.getView(cameraTransform.position);
@@ -176,7 +178,20 @@ void App::run()
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+
         ImGui::NewFrame();
+
+        ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+        ImGui::DockSpaceOverViewport(dockspace_id, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
+        ImGui::Begin("Camera");
+        ImGui::DragFloat3("position", glm::value_ptr(cameraTransform.position), 0.025f);
+        ImGui::DragFloat3("front", glm::value_ptr(camera.front), 0.025f);
+        ImGui::DragFloat2("near/far", n_f, 0.025f);
+        ImGui::DragFloat("fov", &fov, 0.1f);
+        ImGui::End();
+
+        auto proj = camera.getProj((float)m_windowSize.x / m_windowSize.y);
 
         auto pickedView = m_registry.view<Picked, Transform, Renderer>();
         if (pickedView.size_hint() > 0) {
@@ -195,12 +210,14 @@ void App::run()
 
             if (m_registry.all_of<Body>(entity)) {
                 ImGui::SeparatorText("Body");
-                auto velocity = m_physics.getVelocity(entity);
-                ImGui::Text("velocity: (%.3f, %.3f, %.3f)", velocity.x, velocity.y, velocity.z);
+                auto velocity = physics.getVelocity(entity);
+                ImGui::BeginDisabled(true);
+                ImGui::InputFloat3("velocity", glm::value_ptr(velocity));
+                ImGui::EndDisabled();
                 static glm::vec3 impulse { };
                 ImGui::DragFloat3("impulse", glm::value_ptr(impulse), 1.0f);
                 if (ImGui::Button("Apply impulse")) {
-                    m_physics.addImpulse(entity, impulse);
+                    physics.addImpulse(entity, impulse);
                 }
             }
 
@@ -208,8 +225,6 @@ void App::run()
 
             physics.applyTransform(entity);
         }
-
-        shader.setUniform(lightPos, "light.position");
 
         renderer.render(proj);
 
@@ -248,21 +263,20 @@ void App::processInput(const glm::mat4& viewMatrix, const glm::vec3& cameraPos) 
 
     m_registry.clear<Picked>();
 
-    double xpos, ypos;
-    glfwGetCursorPos(m_window.get(), &xpos, &ypos);
-    float mouseX = xpos;
-    float mouseY = ypos;
+    auto pos = input.getCursorPosition();
+    float mouseX = pos.x;
+    float mouseY = pos.y;
 
     int windowWidth, windowHeight;
     glfwGetWindowSize(m_window.get(), &windowWidth, &windowHeight);
     glm::vec2 mouseNDC = {
         (2.0f * mouseX / windowWidth) - 1.0f, 1.0f - (2.0f * mouseY / windowHeight)
     };
-    auto projMatrix = glm::perspective(glm::radians(60.0f),
-        (float)m_windowSize.x / m_windowSize.y,
-        0.1f, 100.0f);
+    auto& camera = m_registry.ctx().get<FlyingCamera>().getComponent<Camera>();
+    auto proj = camera.getProj((float)m_windowSize.x / m_windowSize.y);
+
     glm::vec4 clip = { mouseNDC.x, mouseNDC.y, -1.0f, 1.0f };
-    glm::vec4 eye = glm::inverse(projMatrix) * clip;
+    glm::vec4 eye = glm::inverse(proj) * clip;
     eye.z = -1.0f;
     eye.w = 0.0f;
     glm::vec3 worldDir = glm::normalize(glm::vec3(glm::inverse(viewMatrix) * eye));

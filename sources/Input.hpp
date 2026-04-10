@@ -9,6 +9,7 @@
 class Input {
 public:
     Input() = default;
+    ~Input();
     void setGlfwWindow(GLFWwindow* window) noexcept;
 
     void update() noexcept;
@@ -29,6 +30,8 @@ private:
     static void cursorCallback(GLFWwindow* window, double xpos, double ypos) noexcept;
 
 private:
+    GLFWwindow* m_window{};
+
     bool m_keys[1024] { false };
     bool m_keysDown[1024] { false };
     bool m_keysUp[1024] { false };

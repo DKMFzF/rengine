@@ -13,11 +13,19 @@ bool Input::getButtonUp(int button) const noexcept { return m_buttonsUp[button];
 glm::ivec2 Input::getCursorPosition() const noexcept { return m_cursorPos; }
 std::optional<glm::ivec2> Input::getCursorDelta() const noexcept { return m_cursorDelta; }
 
+Input::~Input()
+{
+    glfwSetKeyCallback(m_window, nullptr);
+    glfwSetMouseButtonCallback(m_window, nullptr);
+    glfwSetCursorPosCallback(m_window, nullptr);
+}
+
 void Input::setGlfwWindow(GLFWwindow* window) noexcept
 {
-    glfwSetKeyCallback(window, keyCallback);
-    glfwSetMouseButtonCallback(window, buttonCallback);
-    glfwSetCursorPosCallback(window, cursorCallback);
+    m_window = window;
+    glfwSetKeyCallback(m_window, keyCallback);
+    glfwSetMouseButtonCallback(m_window, buttonCallback);
+    glfwSetCursorPosCallback(m_window, cursorCallback);
 }
 
 void Input::update() noexcept
@@ -69,8 +77,7 @@ void Input::cursorCallback(GLFWwindow* window, double xpos, double ypos) noexcep
     if (input.m_firstMouse) {
         input.m_cursorDelta = { 0, 0 };
         input.m_firstMouse = false;
-    }
-    else
+    } else
         input.m_cursorDelta = input.m_cursorPos - newPos;
 
     input.m_cursorPos = newPos;
