@@ -79,6 +79,9 @@ public:
     void createCollider(entt::entity entity, bool dynamic = true);
     std::optional<entt::entity> pick(const Ray& ray) const noexcept;
 
+    void addImpulse(entt::entity entity, glm::vec3 impulse) noexcept;
+    glm::vec3 getVelocity(entt::entity entity) const noexcept;
+
 private:
     void destroyBody(entt::registry& registry, entt::entity entity);
 

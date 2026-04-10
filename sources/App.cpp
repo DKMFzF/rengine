@@ -25,6 +25,7 @@
 #include "Input.hpp"
 #include "Mesh.hpp"
 #include "Texture.hpp"
+#include "components/Body.hpp"
 #include "components/Camera.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
@@ -64,16 +65,15 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
 
     glViewport(0, 0, windowWidth, windowHeight);
     glEnable(GL_DEPTH_TEST);
+
+    auto& input = m_registry.ctx().emplace<Input>();
+    input.setGlfwWindow(m_window.get());
+    m_registry.ctx().emplace<Clock>();
 }
 
 static bool showCursor = false;
 void App::run()
 {
-    auto& input = m_registry.ctx().emplace<Input>();
-    input.setGlfwWindow(m_window.get());
-    m_registry.ctx().emplace<Clock>();
-
-    FlyingCamera m_camera { m_registry, { 10.0f, 10.0f, 10.0f } };
 
     JPH::RegisterDefaultAllocator();
     JPH::Factory::sInstance = new JPH::Factory { };
@@ -86,6 +86,11 @@ void App::run()
     };
 
     PhysicsEngine& m_physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
+
+    auto& input = m_registry.ctx().get<Input>();
+    auto& physics = m_registry.ctx().get<PhysicsEngine>();
+
+    FlyingCamera camera { m_registry, { 10.0f, 10.0f, 10.0f } };
 
     RendererSystem renderer { m_registry };
 
@@ -126,19 +131,19 @@ void App::run()
 
     floor.scale() = { 5.0f, .2f, 5.0f };
 
-    m_physics.createCollider(floor.getEntity(), false);
-    m_physics.createCollider(floor0.getEntity(), false);
-    m_physics.createCollider(floor1.getEntity(), false);
-    m_physics.createCollider(floor2.getEntity(), false);
-    m_physics.createCollider(floor3.getEntity(), false);
+    physics.createCollider(floor.getEntity(), false);
+    physics.createCollider(floor0.getEntity(), false);
+    physics.createCollider(floor1.getEntity(), false);
+    physics.createCollider(floor2.getEntity(), false);
+    physics.createCollider(floor3.getEntity(), false);
 
-    constexpr auto COUNT = 600;
+    constexpr auto COUNT = 100;
     std::vector<Model> cubes;
     cubes.reserve(COUNT);
     for (int i = 0; i < COUNT; i++) {
         auto& cube = cubes.emplace_back(m_registry, cubeMesh, containerTexture, containerSpecularTexture);
         cube.position() = { random(-5.0, 5.0), random(25.0, 200.0), random(-5.0, 5.0) };
-        m_physics.createCollider(cube.getEntity());
+        physics.createCollider(cube.getEntity());
     }
 
     IMGUI_CHECKVERSION();
@@ -152,8 +157,8 @@ void App::run()
     while (m_running) {
         updateWindow();
         m_registry.ctx().get<Clock>().update();
-        m_physics.update();
-        m_camera.update();
+        physics.update();
+        camera.update();
 
         auto proj = glm::perspective(glm::radians(60.0f),
             (float)m_windowSize.x / m_windowSize.y,
@@ -188,9 +193,20 @@ void App::run()
             ImGui::SeparatorText("Renderer");
             ImGui::Checkbox("Draw AABB", &renderer.drawAABB);
 
+            if (m_registry.all_of<Body>(entity)) {
+                ImGui::SeparatorText("Body");
+                auto velocity = m_physics.getVelocity(entity);
+                ImGui::Text("velocity: (%.3f, %.3f, %.3f)", velocity.x, velocity.y, velocity.z);
+                static glm::vec3 impulse { };
+                ImGui::DragFloat3("impulse", glm::value_ptr(impulse), 1.0f);
+                if (ImGui::Button("Apply impulse")) {
+                    m_physics.addImpulse(entity, impulse);
+                }
+            }
+
             ImGui::End();
 
-            m_physics.applyTransform(entity);
+            physics.applyTransform(entity);
         }
 
         shader.setUniform(lightPos, "light.position");

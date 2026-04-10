@@ -1,5 +1,6 @@
 #include "PhysicsEngine.hpp"
 #include "BoundingBox.hpp"
+#include "Clock.hpp"
 #include "components/Body.hpp"
 #include "components/Transform.hpp"
 
@@ -18,7 +19,7 @@
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/RegisterTypes.h>
 
-
+#include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
 #include <glm/trigonometric.hpp>
 
@@ -44,7 +45,7 @@ PhysicsEngine::PhysicsEngine(entt::registry& registry, JPH::TempAllocatorImpl& t
 void PhysicsEngine::update() noexcept
 {
     const float fixedDelta = 1.0f / 180.0f;
-    m_world.Update(fixedDelta, 1, &m_tempAllocator, &m_jobSystem);
+    m_world.Update(m_registry.ctx().get<Clock>().getDelta(), 1, &m_tempAllocator, &m_jobSystem);
     auto view = m_registry.view<Body, Transform>();
     for (auto [entity, body, transform] : view.each()) {
         JPH::RVec3 position;
@@ -122,4 +123,26 @@ std::optional<entt::entity> PhysicsEngine::pick(const Ray& ray) const noexcept
 
     auto& ibody = m_world.GetBodyInterface();
     return static_cast<entt::entity>(ibody.GetUserData(hit.mBodyID));
+}
+
+void PhysicsEngine::addImpulse(entt::entity entity, glm::vec3 impulse) noexcept
+{
+    if (!m_registry.all_of<Body>(entity))
+        return;
+
+    auto [bodyID] = m_registry.get<Body>(entity);
+    JPH::RVec3 impulse_ = { impulse.x, impulse.y, impulse.z };
+    auto& ibody = m_world.GetBodyInterface();
+    ibody.AddImpulse(bodyID, impulse_);
+}
+
+glm::vec3 PhysicsEngine::getVelocity(entt::entity entity) const noexcept
+{
+    if (!m_registry.all_of<Body>(entity))
+        return glm::vec3 { 0.0f };
+
+    auto [bodyID] = m_registry.get<Body>(entity);
+    auto& ibody = m_world.GetBodyInterface();
+    auto velocity = ibody.GetLinearVelocity(bodyID);
+    return { velocity.GetX(), velocity.GetY(), velocity.GetZ() };
 }
