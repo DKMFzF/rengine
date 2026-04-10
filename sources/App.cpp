@@ -1,15 +1,5 @@
 #include "App.hpp"
 
-#include <GLFW/glfw3.h>
-#include <cmath>
-#include <cstdlib>
-#include <entt/entity/fwd.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <optional>
-#include <stdexcept>
-
 #include <Jolt/Jolt.h>
 
 #include <Jolt/Core/Factory.h>
@@ -21,7 +11,15 @@
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/RegisterTypes.h>
-#include <vector>
+
+#include <GLFW/glfw3.h>
+#include <entt/entity/fwd.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include "BoundingBox.hpp"
 #include "Input.hpp"
@@ -36,9 +34,10 @@
 #include "systems/PhysicsEngine.hpp"
 #include "systems/RendererSystem.hpp"
 
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
+#include <cstdlib>
+#include <optional>
+#include <stdexcept>
+#include <vector>
 
 float random(float min, float max)
 {
@@ -85,7 +84,8 @@ void App::run()
         JPH::cMaxPhysicsBarriers,
         (int)std::thread::hardware_concurrency()
     };
-    PhysicsEngine m_physics { m_registry, tempAllocator, jobSystem };
+
+    PhysicsEngine& m_physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
 
     RendererSystem renderer { m_registry };
 
@@ -239,71 +239,21 @@ void App::processInput(const glm::mat4& viewMatrix, const glm::vec3& cameraPos) 
 
     int windowWidth, windowHeight;
     glfwGetWindowSize(m_window.get(), &windowWidth, &windowHeight);
-
-    struct Ray {
-        glm::vec3 origin; // точка начала
-        glm::vec3 direction; // нормализованное направление
-    };
-
-    auto rayIntersectsAABB = [](const Ray& ray, const BoundingBox& aabb, float& tNear, float& tFar) {
-        tNear = -INFINITY;
-        tFar = +INFINITY;
-
-        for (int i = 0; i < 3; i++) {
-            if (ray.direction[i] != 0.0f) {
-                float t1 = (aabb.min[i] - ray.origin[i]) / ray.direction[i];
-                float t2 = (aabb.max[i] - ray.origin[i]) / ray.direction[i];
-
-                if (t1 > t2)
-                    std::swap(t1, t2);
-
-                tNear = std::max(tNear, t1);
-                tFar = std::min(tFar, t2);
-
-                if (tNear > tFar)
-                    return false;
-                if (tFar < 0)
-                    return false;
-            } else {
-                // Луч параллелен плоскости
-                if (ray.origin[i] < aabb.min[i] || ray.origin[i] > aabb.max[i])
-                    return false;
-            }
-        }
-
-        return true;
-    };
-
-    glm::vec2 mouseNDC = { // NDC = [-1,1]
+    glm::vec2 mouseNDC = {
         (2.0f * mouseX / windowWidth) - 1.0f, 1.0f - (2.0f * mouseY / windowHeight)
     };
-
     auto projMatrix = glm::perspective(glm::radians(60.0f),
         (float)m_windowSize.x / m_windowSize.y,
         0.1f, 100.0f);
-
     glm::vec4 clip = { mouseNDC.x, mouseNDC.y, -1.0f, 1.0f };
     glm::vec4 eye = glm::inverse(projMatrix) * clip;
     eye.z = -1.0f;
     eye.w = 0.0f;
-
     glm::vec3 worldDir = glm::normalize(glm::vec3(glm::inverse(viewMatrix) * eye));
 
     Ray ray { cameraPos, worldDir };
-
-    auto view = m_registry.view<BoundingBox, Transform>();
-    auto closest = +INFINITY;
-    std::optional<entt::entity> picked;
-    for (auto [entity, localAABB, transform] : view.each()) {
-        auto aabb = toGlobalAABB(localAABB, transform);
-        float tNear, tFar;
-        if (rayIntersectsAABB(ray, aabb, tNear, tFar)) {
-            if (tNear < closest) {
-                closest = tNear;
-                picked = entity;
-            }
-        }
-    }
+    auto& physics = m_registry.ctx().get<PhysicsEngine>();
+    auto picked = physics.pick(ray);
     if (picked)
         m_registry.emplace_or_replace<Picked>(picked.value());
 }
