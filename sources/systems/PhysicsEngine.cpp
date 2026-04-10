@@ -2,6 +2,7 @@
 #include "BoundingBox.hpp"
 #include "components/Body.hpp"
 #include "components/Transform.hpp"
+#include "systems/Clock.hpp"
 
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/Memory.h>
@@ -36,7 +37,8 @@ PhysicsEngine::PhysicsEngine(entt::registry& registry, JPH::TempAllocatorImpl& t
 
 void PhysicsEngine::update() noexcept
 {
-    m_world.Update(1.0f / 180.0f, 1, &m_tempAllocator, &m_jobSystem);
+    const float fixedDelta = 1.0f / 180.0f;
+    m_world.Update(fixedDelta, 1, &m_tempAllocator, &m_jobSystem);
     auto view = m_registry.view<Body, Transform>();
     for (auto [entity, body, transform] : view.each()) {
         JPH::RVec3 position;

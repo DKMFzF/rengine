@@ -26,10 +26,13 @@
 #include "BoundingBox.hpp"
 #include "Input.hpp"
 #include "Mesh.hpp"
-#include "Object.hpp"
 #include "Texture.hpp"
+#include "components/Camera.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
+#include "objects/FlyingCamera.hpp"
+#include "objects/Model.hpp"
+#include "systems/Clock.hpp"
 #include "systems/PhysicsEngine.hpp"
 #include "systems/RendererSystem.hpp"
 
@@ -51,7 +54,6 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
     if (m_window == nullptr) {
         throw std::runtime_error { "Failed to create GLFW window" };
     }
-    m_input.setGlfwWindow(m_window.get());
 
     glfwSetWindowUserPointer(m_window.get(), this);
 
@@ -68,6 +70,12 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
 static bool showCursor = false;
 void App::run()
 {
+    auto& input = m_registry.ctx().emplace<Input>();
+    input.setGlfwWindow(m_window.get());
+    m_registry.ctx().emplace<Clock>();
+
+    FlyingCamera m_camera { m_registry, { 10.0f, 10.0f, 10.0f } };
+
     JPH::RegisterDefaultAllocator();
     JPH::Factory::sInstance = new JPH::Factory { };
     JPH::RegisterTypes();
@@ -79,7 +87,7 @@ void App::run()
     };
     PhysicsEngine m_physics { m_registry, tempAllocator, jobSystem };
 
-    RendererSystem renderer { m_registry, m_camera };
+    RendererSystem renderer { m_registry };
 
     auto& shader = renderer.getShader();
 
@@ -93,11 +101,11 @@ void App::run()
     auto containerSpecularTexture = std::make_shared<Texture>("resources/images/container2_specular.png");
     auto windowTexture = std::make_shared<Texture>("resources/images/window.png");
 
-    Object floor0 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Object floor1 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Object floor2 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Object floor3 { m_registry, cubeMesh, floorTexture, whiteTexture };
-    Object floor { m_registry, cubeMesh, floorTexture, whiteTexture };
+    Model floor0 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    Model floor1 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    Model floor2 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    Model floor3 { m_registry, cubeMesh, floorTexture, whiteTexture };
+    Model floor { m_registry, cubeMesh, floorTexture, whiteTexture };
 
     floor0.position() = { 0.0f, 0.0f, -5.0f };
     floor1.position() = { 0.0f, 0.0f, 5.0f };
@@ -124,10 +132,8 @@ void App::run()
     m_physics.createCollider(floor2.getEntity(), false);
     m_physics.createCollider(floor3.getEntity(), false);
 
-    m_camera.getPos() = { 10.0f, 10.0f, 10.0f };
-
     constexpr auto COUNT = 600;
-    std::vector<Object> cubes;
+    std::vector<Model> cubes;
     cubes.reserve(COUNT);
     for (int i = 0; i < COUNT; i++) {
         auto& cube = cubes.emplace_back(m_registry, cubeMesh, containerTexture, containerSpecularTexture);
@@ -145,11 +151,20 @@ void App::run()
     glm::vec3 lightPos { -15.0f, 15.0f, 15.0f };
     while (m_running) {
         updateWindow();
+        m_registry.ctx().get<Clock>().update();
         m_physics.update();
+        m_camera.update();
 
-        processInput();
+        auto proj = glm::perspective(glm::radians(60.0f),
+            (float)m_windowSize.x / m_windowSize.y,
+            0.1f, 100.0f);
+        auto cameraEntity = m_registry.view<Camera, Transform>().front();
+        auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
+        auto view = camera.getView(cameraTransform.position);
 
-        if (m_input.getKeyDown(GLFW_KEY_Q)) {
+        processInput(view, cameraTransform.position);
+
+        if (input.getKeyDown(GLFW_KEY_Q)) {
             showCursor = !showCursor;
             glfwSetInputMode(m_window.get(), GLFW_CURSOR, showCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
         }
@@ -178,19 +193,14 @@ void App::run()
             m_physics.applyTransform(entity);
         }
 
-        auto proj = glm::perspective(glm::radians(60.0f),
-            (float)m_windowSize.x / m_windowSize.y,
-            0.1f, 100.0f);
-        auto& view = m_camera.getView();
-
         shader.setUniform(lightPos, "light.position");
 
-        renderer.render(view, proj);
+        renderer.render(proj);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        m_input.update();
+        input.update();
         glfwSwapBuffers(m_window.get());
     }
 
@@ -199,52 +209,25 @@ void App::run()
     ImGui::DestroyContext();
 }
 
-Input& App::getInput() noexcept { return m_input; }
-
 void App::updateWindow() noexcept { glfwPollEvents(); }
 
 void App::close() noexcept { m_running = false; }
 
-void App::processInput() noexcept
+void App::processInput(const glm::mat4& viewMatrix, const glm::vec3& cameraPos) noexcept
 {
-    if (m_input.getKey(GLFW_KEY_W))
-        m_camera.move(Camera::Direction::Front);
-    if (m_input.getKey(GLFW_KEY_S))
-        m_camera.move(Camera::Direction::Back);
-    if (m_input.getKey(GLFW_KEY_A))
-        m_camera.move(Camera::Direction::Left);
-    if (m_input.getKey(GLFW_KEY_D))
-        m_camera.move(Camera::Direction::Right);
-    if (m_input.getKey(GLFW_KEY_SPACE))
-        m_camera.move(Camera::Direction::Up);
-    if (m_input.getKey(GLFW_KEY_LEFT_SHIFT))
-        m_camera.move(Camera::Direction::Down);
-    if (m_input.getKey(GLFW_KEY_ESCAPE))
+    auto& input = m_registry.ctx().get<Input>();
+    if (input.getKey(GLFW_KEY_ESCAPE))
         close();
-
-    if (m_input.getButton(GLFW_MOUSE_BUTTON_MIDDLE))
-        if (auto delta = m_input.getCursorDelta(); delta) {
-            float sensitivity = 0.1f;
-            auto xoffset = -delta->x * sensitivity;
-            auto yoffset = delta->y * sensitivity;
-
-            m_yaw += xoffset;
-            m_pitch += yoffset;
-
-            m_camera.rotate(m_yaw, m_pitch);
-        }
-
-    m_camera.update();
 
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
     if (io.WantCaptureMouse || glfwGetInputMode(m_window.get(), GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
         return;
 
-    if (m_input.getButtonDown(GLFW_MOUSE_BUTTON_RIGHT))
+    if (input.getButtonDown(GLFW_MOUSE_BUTTON_RIGHT))
         m_registry.clear<Picked>();
 
-    if (!m_input.getButtonDown(GLFW_MOUSE_BUTTON_LEFT))
+    if (!input.getButtonDown(GLFW_MOUSE_BUTTON_LEFT))
         return;
 
     m_registry.clear<Picked>();
@@ -298,7 +281,6 @@ void App::processInput() noexcept
     auto projMatrix = glm::perspective(glm::radians(60.0f),
         (float)m_windowSize.x / m_windowSize.y,
         0.1f, 100.0f);
-    auto& viewMatrix = m_camera.getView();
 
     glm::vec4 clip = { mouseNDC.x, mouseNDC.y, -1.0f, 1.0f };
     glm::vec4 eye = glm::inverse(projMatrix) * clip;
@@ -307,7 +289,7 @@ void App::processInput() noexcept
 
     glm::vec3 worldDir = glm::normalize(glm::vec3(glm::inverse(viewMatrix) * eye));
 
-    Ray ray { m_camera.getPos(), worldDir };
+    Ray ray { cameraPos, worldDir };
 
     auto view = m_registry.view<BoundingBox, Transform>();
     auto closest = +INFINITY;

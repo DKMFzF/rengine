@@ -1,11 +1,12 @@
 #include "RendererSystem.hpp"
 #include "BoundingBox.hpp"
-#include "Camera.hpp"
 #include "Cubemap.hpp"
 #include "Frustum.hpp"
 #include "LineBatch.hpp"
+#include "components/Camera.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
+#include "systems/Clock.hpp"
 #include "utils.hpp"
 
 #include <array>
@@ -20,13 +21,12 @@
 #include <glm/geometric.hpp>
 #include <vector>
 
-RendererSystem::RendererSystem(entt::registry& registry, Camera& camera)
+RendererSystem::RendererSystem(entt::registry& registry)
     : m_registry { registry }
     , m_shader { "resources/shaders/main_v.glsl", "resources/shaders/main_f.glsl" }
     , m_skyboxShader { "resources/shaders/cubemap_v.glsl", "resources/shaders/cubemap_f.glsl" }
     , m_transparentShader { "resources/shaders/transparent_v.glsl", "resources/shaders/transparent_f.glsl" }
     , m_linesShader { "resources/shaders/line_v.glsl", "resources/shaders/line_f.glsl" }
-    , m_camera { camera }
 {
     // Skybox
     m_skyboxTexture.reset(
@@ -47,13 +47,9 @@ RendererSystem::RendererSystem(entt::registry& registry, Camera& camera)
 std::array<Line, 12> toLines(const BoundingBox& aabb, const Transform& transform) noexcept;
 std::array<Line, 12> toLinesAligned(const BoundingBox& aabb, const Transform& transform) noexcept;
 
-void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexcept
+void RendererSystem::render(const glm::mat4& proj) noexcept
 {
-    auto now = std::chrono::steady_clock::now();
-    auto frametime = std::chrono::duration<float>(now - m_lastFrame).count();
-    m_lastFrame = now;
-
-    m_lastFrametimes[m_currentFrame] = frametime;
+    m_lastFrametimes[m_currentFrame] = m_registry.ctx().get<Clock>().getDelta();
     m_currentFrame = (m_currentFrame + 1) % FRAMES;
 
     if (m_currentFrame == 0) {
@@ -61,6 +57,10 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
         float average = sum / FRAMES;
         FPS = 1.0f / average;
     }
+
+    auto cameraEntity = m_registry.view<Camera, Transform>().front();
+    auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
+    auto view = camera.getView(cameraTransform.position);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -87,7 +87,7 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
     m_shader.setUniform(glm::vec3 { 0.2f, 0.2f, 0.2f }, "light.ambient");
     m_shader.setUniform(glm::vec3 { 0.5f, 0.5f, 0.5f }, "light.diffuse");
     m_shader.setUniform(glm::vec3 { 1.0f, 1.0f, 1.0f }, "light.specular");
-    m_shader.setUniform(m_camera.getPos(), "viewPos");
+    m_shader.setUniform(cameraTransform.position, "viewPos");
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -121,9 +121,10 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
 
     auto tobjects = m_registry.view<Transform, Renderer, Transparent, BoundingBox>();
     std::vector<std::pair<float, entt::entity>> sorted;
+#if 1
     for (auto entity : tobjects) {
         auto& transform = tobjects.get<Transform>(entity);
-        auto dist = glm::distance2(transform.position, m_camera.getPos());
+        auto dist = glm::distance2(transform.position, cameraTransform.position);
         sorted.push_back({ dist, entity });
     }
     std::sort(sorted.begin(), sorted.end(), [](auto& a, auto& b) {
@@ -143,6 +144,7 @@ void RendererSystem::render(const glm::mat4& view, const glm::mat4& proj) noexce
         renderer.texture->bind();
         renderer.mesh->draw();
     }
+#endif
 
     ImGui::Begin("Render");
     ImGui::Text("FPS: %f", FPS);

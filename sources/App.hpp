@@ -3,7 +3,6 @@
 #include <entt/entt.hpp>
 #include <string>
 
-#include "Camera.hpp"
 #include "Input.hpp"
 #include "utils.hpp"
 
@@ -11,11 +10,11 @@ class App {
 public:
     App(int windowWidth, int windowHeight, const std::string& windowTitle);
     void run();
-    Input& getInput() noexcept;
+    Input& getInput() noexcept { return m_registry.ctx().get<Input>(); };
 
 private:
     void updateWindow() noexcept;
-    void processInput() noexcept;
+    void processInput(const glm::mat4& viewMatrix, const glm::vec3& cameraPos) noexcept;
     void close() noexcept;
 
 private:
@@ -27,9 +26,7 @@ private:
 private:
     GlfwContext m_glfwContext;
     GlfwWindowPtr m_window;
-    Input m_input;
-    
-    Camera m_camera { glm::vec3 { 0.0f, 0.0f, 3.0f } };
+
     entt::registry m_registry;
 
     glm::ivec2 m_windowSize;

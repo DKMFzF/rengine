@@ -21,8 +21,7 @@ add_executable(${PROJECT_NAME}
     sources/Input.hpp
     sources/Input.cpp
     sources/Buffer.hpp
-    sources/Camera.hpp
-    sources/Camera.cpp
+
     sources/Cubemap.hpp
     sources/Mesh.hpp
     sources/Mesh.cpp
@@ -38,8 +37,16 @@ add_executable(${PROJECT_NAME}
     sources/LineBatch.cpp
     sources/BoundingBox.hpp
 
+    sources/objects/FlyingCamera.hpp
+    sources/objects/FlyingCamera.cpp
+    sources/objects/Model.hpp
+    sources/objects/Model.cpp
+
+
     sources/components/Transform.hpp
     sources/components/Transform.cpp
+    sources/components/Camera.hpp
+    sources/components/Camera.cpp
     sources/components/Renderer.hpp
     sources/components/Material.hpp
     sources/components/Body.hpp
@@ -48,6 +55,9 @@ add_executable(${PROJECT_NAME}
     sources/systems/RendererSystem.cpp
     sources/systems/PhysicsEngine.hpp
     sources/systems/PhysicsEngine.cpp
+    sources/systems/Clock.hpp
+    sources/systems/Clock.cpp
+
 
     sources/third-party/stb_image.h
     sources/third-party/tiny_obj_loader.h
