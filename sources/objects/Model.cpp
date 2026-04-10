@@ -11,15 +11,6 @@ Model::Model(entt::registry& registry, std::shared_ptr<Mesh> mesh, std::shared_p
     addComponent(mesh->getAABB());
 }
 
-void Model::draw(Shader& shader) const noexcept
-{
-    auto model = getComponent<Transform>().getMatrix();
-    shader.setUniform(model, "model");
-
-    getComponent<Renderer>().texture->bind();
-    getComponent<Renderer>().mesh->draw();
-}
-
 glm::vec3& Model::position() noexcept { return getComponent<Transform>().position; }
 glm::vec3& Model::rotation() noexcept { return getComponent<Transform>().rotation; }
 glm::vec3& Model::scale() noexcept { return getComponent<Transform>().scale; }

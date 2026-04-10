@@ -2,21 +2,27 @@
 #include "BoundingBox.hpp"
 #include "components/Body.hpp"
 #include "components/Transform.hpp"
-#include "systems/Clock.hpp"
 
+#include <Jolt/Core/Core.h>
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/Memory.h>
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Geometry/Plane.h>
 #include <Jolt/Math/Real.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/PlaneShape.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/RegisterTypes.h>
+
+
 #include <glm/ext/vector_float4.hpp>
 #include <glm/trigonometric.hpp>
+
+#include <optional>
 
 PhysicsEngine::PhysicsEngine(entt::registry& registry, JPH::TempAllocatorImpl& tempAllocator, JPH::JobSystemThreadPool& jobSystem)
     : m_registry { registry }
@@ -77,6 +83,7 @@ void PhysicsEngine::createCollider(entt::entity entity, bool dynamic)
         dynamic ? Layers::MOVING : Layers::NON_MOVING);
 
     JPH::Body* box = m_world.GetBodyInterface().CreateBody(box_settings);
+    box->SetUserData(static_cast<JPH::uint64>(entity));
     m_world.GetBodyInterface().AddBody(box->GetID(), dynamic ? JPH::EActivation::Activate : JPH::EActivation::DontActivate);
     m_registry.emplace_or_replace<Body>(entity, Body { box->GetID() });
 }
@@ -100,4 +107,19 @@ void PhysicsEngine::applyTransform(entt::entity entity) noexcept
     auto quat = JPH::Quat::sEulerAngles(rotation);
     auto& ibody = m_world.GetBodyInterface();
     ibody.SetPositionAndRotation(body.bodyID, position, quat, JPH::EActivation::Activate);
+}
+
+std::optional<entt::entity> PhysicsEngine::pick(const Ray& ray) const noexcept
+{
+    JPH::Vec3 origin = { ray.origin.x, ray.origin.y, ray.origin.z };
+    JPH::Vec3 direction = { ray.direction.x, ray.direction.y, ray.direction.z };
+
+    JPH::RRayCast raycast(origin, direction * 100.0f);
+
+    JPH::RayCastResult hit;
+    if (!m_world.GetNarrowPhaseQuery().CastRay(raycast, hit))
+        return std::nullopt;
+
+    auto& ibody = m_world.GetBodyInterface();
+    return static_cast<entt::entity>(ibody.GetUserData(hit.mBodyID));
 }

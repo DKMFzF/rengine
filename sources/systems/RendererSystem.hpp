@@ -4,6 +4,7 @@
 #include "Shader.hpp"
 #include "VertexArray.hpp"
 
+#include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
 #include <sys/stat.h>
 

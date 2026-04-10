@@ -6,8 +6,10 @@
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/Body/BodyID.h>
 #include <Jolt/Physics/PhysicsSystem.h>
+
 #include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
+#include <glm/glm.hpp>
 
 namespace Layers {
 static constexpr JPH::ObjectLayer NON_MOVING = 0;
@@ -63,6 +65,11 @@ public:
     }
 };
 
+struct Ray {
+    glm::vec3 origin;
+    glm::vec3 direction;
+};
+
 class PhysicsEngine {
 public:
     PhysicsEngine(entt::registry& registry, JPH::TempAllocatorImpl& tempAllocator, JPH::JobSystemThreadPool& jobSystem);
@@ -70,6 +77,7 @@ public:
 
     void applyTransform(entt::entity entity) noexcept;
     void createCollider(entt::entity entity, bool dynamic = true);
+    std::optional<entt::entity> pick(const Ray& ray) const noexcept;
 
 private:
     void destroyBody(entt::registry& registry, entt::entity entity);
