@@ -127,7 +127,7 @@ std::optional<entt::entity> PhysicsEngine::pick(const Ray& ray) const noexcept
     JPH::Vec3 origin = { ray.origin.x, ray.origin.y, ray.origin.z };
     JPH::Vec3 direction = { ray.direction.x, ray.direction.y, ray.direction.z };
 
-    JPH::RRayCast raycast(origin, direction * 100.0f);
+    JPH::RRayCast raycast(origin, direction * 5000.0f);
 
     JPH::RayCastResult hit;
     if (!m_world.GetNarrowPhaseQuery().CastRay(raycast, hit))

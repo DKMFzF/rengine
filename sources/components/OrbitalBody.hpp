@@ -3,5 +3,5 @@
 #include <glm/glm.hpp>
 
 struct OrbitalBody {
-    glm::vec3 velicity{};
+    glm::vec3 velocity { };
 };

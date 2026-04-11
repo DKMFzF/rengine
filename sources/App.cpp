@@ -117,7 +117,7 @@ void App::run()
     ModelObject cube { m_registry, cubeModel, whiteTexture, whiteTexture };
 
     xz.position() = { -20.0f, 0.0f, 0.0f };
-    xz.addComponent(OrbitalBody { .velicity = {0.0f, 0.0f, 4.0f}});
+    xz.addComponent(OrbitalBody { .velocity = { 0.0f, 0.0f, 4.0f } });
     xz.addComponent(Picked { });
 
     cube.addComponent(Celestial { 1000.0f });
@@ -132,11 +132,13 @@ void App::run()
     ImGui_ImplGlfw_InitForOpenGL(m_window.get(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+    bool simulateOrbital = false;
     while (m_running) {
         updateWindow();
         m_registry.ctx().get<Clock>().update();
         // physics.update();
-        orbital.update();
+        if (simulateOrbital)
+            orbital.update();
         flyCamera.update();
 
         auto cameraEntity = m_registry.view<Camera, Transform>().front();
@@ -161,6 +163,11 @@ void App::run()
         ImGui::Image(renderTex->getId(), { 300, 180 }, { 0, 1 }, { 1, 0 });
         ImGui::End();
 
+        ImGui::Begin("OrbitEngine");
+        ImGui::DragFloat("GM", &cube.getComponent<Celestial>().GM);
+        ImGui::Checkbox("Simulate", &simulateOrbital);
+        ImGui::End();
+
         auto proj = camera.getProj((float)m_windowSize.x / m_windowSize.y);
 
         auto pickedView = m_registry.view<Picked, Transform, Renderer>();
@@ -177,6 +184,14 @@ void App::run()
 
             ImGui::SeparatorText("Renderer");
             ImGui::Checkbox("Draw AABB", &renderer.drawAABB);
+
+            if (m_registry.all_of<OrbitalBody>(entity)) {
+                auto& body = m_registry.get<OrbitalBody>(entity);
+                ImGui::SeparatorText("OrbitalBody");
+                ImGui::BeginDisabled(simulateOrbital);
+                ImGui::DragFloat3("orbital velocity", glm::value_ptr(body.velocity), 0.05);
+                ImGui::EndDisabled();
+            }
 
             if (m_registry.all_of<Body>(entity)) {
                 ImGui::SeparatorText("Body");

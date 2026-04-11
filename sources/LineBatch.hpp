@@ -10,7 +10,7 @@ struct Line {
 
 class LineBatch {
 public:
-    void pushLine(const Line& line) noexcept;
+    void push(const Line& line) noexcept;
     void draw() const noexcept;
 
 private:

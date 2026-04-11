@@ -3,7 +3,7 @@
 #include "Input.hpp"
 #include "VertexArray.hpp"
 
-void LineBatch::pushLine(const Line& line) noexcept
+void LineBatch::push(const Line& line) noexcept
 {
     m_lines.push_back(line);
 }

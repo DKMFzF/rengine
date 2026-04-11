@@ -3,7 +3,10 @@
 #include "Cubemap.hpp"
 #include "Frustum.hpp"
 #include "LineBatch.hpp"
+#include "OrbitalEngine.hpp"
 #include "components/Camera.hpp"
+#include "components/Celestial.hpp"
+#include "components/OrbitalBody.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
 #include "systems/Clock.hpp"
@@ -30,8 +33,7 @@ RendererSystem::RendererSystem(entt::registry& registry)
 {
     // Skybox
     m_skyboxTexture.reset(
-        loadCubemap({ 
-            "resources/images/space_skybox/right.png",
+        loadCubemap({ "resources/images/space_skybox/right.png",
             "resources/images/space_skybox/left.png",
             "resources/images/space_skybox/top.png",
             "resources/images/space_skybox/bottom.png",
@@ -166,19 +168,28 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
 
         auto linesArray = toLines(bb, transform);
         for (const auto& line : linesArray) {
-            lines.pushLine(line);
+            lines.push(line);
         }
 
         if (renderer.drawAABB) {
             auto aabb = toGlobalAABB(bb, transform);
             auto alignedLinesArray = toLinesAligned(aabb, transform);
             for (const auto& line : alignedLinesArray) {
-                lines.pushLine(line);
+                lines.push(line);
             }
         }
     }
 
     lines.draw();
+
+    auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
+    LineBatch orbitLines { };
+    auto celView = m_registry.view<Celestial, Transform>();
+    auto [celestial, celTransform] = m_registry.get<Celestial, Transform>(celView.front());
+    for (auto [e, transform, body] : m_registry.view<Transform, OrbitalBody, Picked>().each()) {
+        auto lines = orbital.calcOrbit(e, celView.front());
+        lines.draw();
+    }
 }
 
 std::array<Line, 12> toLines(const BoundingBox& aabb, const Transform& transform) noexcept
