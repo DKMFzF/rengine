@@ -108,8 +108,8 @@ void App::run()
 
     auto& shader = renderer.getShader();
 
-    auto cubesModel = std::make_shared<Model>("resources/models/cubes.fbx");
-    auto rocketTexture = std::make_shared<Texture>("resources/rocket/textures/main_SMR_baseColor.jpeg");
+    auto cubesModel = std::make_shared<Model>("resources/models/xz.fbx");
+    auto rocketTexture = std::make_shared<Texture>("resources/images/xz.png");
     auto whiteTexture = std::make_shared<Texture>("resources/images/white.png");
 
     ModelObject cubes { m_registry, cubesModel, rocketTexture, whiteTexture };
