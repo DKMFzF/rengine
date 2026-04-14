@@ -53,7 +53,7 @@ LineBatch OrbiralEngine::calcOrbit(entt::entity object, entt::entity center) con
         objBody.velocity,
         celBody.GM);
 
-    const int segments = 256; // фиксированный бюджет
+    const int segments = 256;
     glm::vec3 prev;
     bool first = true;
     for (int i = 0; i < segments; i++) {
