@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.hpp"
+#include "GlHandle.hpp"
 
 #include <GL/glew.h>
 

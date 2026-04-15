@@ -10,8 +10,7 @@
 #include "graphics/Cubemap.hpp"
 #include "graphics/LineBatch.hpp"
 #include "systems/Clock.hpp"
-#include "utils.hpp"
-
+#include "utils/utils.hpp"
 
 #include <array>
 #include <entt/entity/fwd.hpp>

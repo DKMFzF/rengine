@@ -1,6 +1,8 @@
 #pragma once
 
-#include "utils.hpp"
+#include "GlHandle.hpp"
+
+#include <filesystem>
 
 class Texture {
 public:

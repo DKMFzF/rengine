@@ -1,4 +1,5 @@
 #include "TestSatelite.hpp"
+#include "Input.hpp"
 #include "ModelObject.hpp"
 #include "components/Celestial.hpp"
 #include "components/OrbitalBody.hpp"

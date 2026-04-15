@@ -3,7 +3,9 @@
 #include "BoundingBox.hpp"
 #include "Buffer.hpp"
 #include "VertexArray.hpp"
-#include "utils.hpp"
+#include "utils/types.hpp"
+
+#include <vector>
 
 struct Mesh {
     void draw() const noexcept;

@@ -1,12 +1,10 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <vector>
+#include "utils/types.hpp"
 
-struct Line {
-    glm::vec3 p1;
-    glm::vec3 p2;
-};
+#include <glm/glm.hpp>
+
+#include <vector>
 
 class LineBatch {
 public:

@@ -15,8 +15,11 @@ find_package(assimp CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     sources/main.cpp
-    sources/utils.hpp
     sources/Events.hpp
+
+    sources/utils/utils.hpp
+    sources/utils/types.hpp
+    sources/utils/glfw.hpp
 
     sources/App.cpp
     sources/App.hpp
@@ -30,7 +33,7 @@ add_executable(${PROJECT_NAME}
     sources/systems/OrbitalEngine.cpp
     sources/systems/Clock.hpp
     sources/systems/Clock.cpp
-    
+
     sources/Model.hpp
     sources/Model.cpp
     sources/Object.hpp
@@ -56,6 +59,7 @@ add_executable(${PROJECT_NAME}
     sources/components/Celestial.hpp
     sources/components/OrbitalBody.hpp
 
+    sources/graphics/GlHandle.hpp
     sources/graphics/Buffer.hpp
     sources/graphics/Cubemap.hpp
     sources/graphics/RenderTarget.hpp

@@ -1,6 +1,5 @@
 #include "LineBatch.hpp"
 #include "Buffer.hpp"
-#include "Input.hpp"
 #include "VertexArray.hpp"
 
 void LineBatch::push(const Line& line) noexcept

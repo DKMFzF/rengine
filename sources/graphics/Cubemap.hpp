@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.hpp"
+#include "utils/utils.hpp"
 
 #include "third-party/stb_image.h"
 
@@ -12,7 +12,6 @@ inline GLuint loadCubemap(const std::vector<std::string>& faces)
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-    
     for (unsigned int i = 0; i < faces.size(); i++) {
         int width, height, nrChannels;
         unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);

@@ -1,5 +1,5 @@
 #include "RenderTexture.hpp"
-#include "utils.hpp"
+#include "GlHandle.hpp"
 
 RenderTexture::RenderTexture(const glm::ivec2& size)
     : m_size { size }

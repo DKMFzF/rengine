@@ -1,8 +1,8 @@
 #pragma once
 
+#include "GlHandle.hpp"
 #include "RenderTarget.hpp"
 #include "Texture.hpp"
-#include "utils.hpp"
 #include <glm/ext/vector_int2.hpp>
 
 class RenderTexture : public Texture, public RenderTarget {

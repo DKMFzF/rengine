@@ -1,53 +1,7 @@
 #pragma once
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-
-inline std::string loadFile(const std::filesystem::path& filePath)
-{
-    auto file = std::ifstream { filePath };
-    if (!file.is_open()) {
-        throw std::runtime_error { "Failed to open file: " + filePath.string() };
-    }
-    auto sstr = std::stringstream { };
-    sstr << file.rdbuf();
-    return sstr.str();
-}
-
-struct GlfwContext {
-    GlfwContext()
-    {
-        if (!glfwInit()) {
-            throw std::runtime_error { "Failed to init GLFW" };
-        }
-    }
-
-    ~GlfwContext() { glfwTerminate(); }
-
-    GlfwContext(const GlfwContext&) = delete;
-    GlfwContext& operator=(const GlfwContext&) = delete;
-    GlfwContext(GlfwContext&&) = delete;
-    GlfwContext& operator=(GlfwContext&&) = delete;
-};
-
-struct GlfwWindowDeleter {
-    void operator()(GLFWwindow* window) const
-    {
-        if (window != nullptr)
-            glfwDestroyWindow(window);
-    }
-};
-
-using GlfwWindowPtr = std::unique_ptr<GLFWwindow, GlfwWindowDeleter>;
 
 template <typename T, typename Deleter>
 class GlHandle {
@@ -129,9 +83,3 @@ struct GlRenderbufferDeleter {
     void operator()(GLuint id) const noexcept { glDeleteRenderbuffers(1, &id); }
 };
 using GlRenderbuffer = GlHandle<GLuint, GlRenderbufferDeleter>;
-
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 tex_coords;
-};

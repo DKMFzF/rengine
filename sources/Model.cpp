@@ -5,6 +5,7 @@
 #include <assimp/scene.h>
 #include <cstdint>
 #include <glm/gtc/type_ptr.hpp>
+#include <stdexcept>
 
 Model::Model(const std::string& path)
 {
