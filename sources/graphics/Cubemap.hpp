@@ -1,8 +1,12 @@
 #pragma once
 
-#include "utils/utils.hpp"
-
 #include "third-party/stb_image.h"
+
+#include <GL/glew.h>
+
+#include <iostream>
+#include <string>
+#include <vector>
 
 class Cubemap { };
 

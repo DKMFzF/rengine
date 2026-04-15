@@ -2,10 +2,8 @@
 #include "components/Celestial.hpp"
 #include "components/OrbitalBody.hpp"
 #include "components/Transform.hpp"
-#include "graphics/LineBatch.hpp"
 #include "systems/PhysicsEngine.hpp"
 #include <glm/geometric.hpp>
-
 
 OrbiralEngine::OrbiralEngine(entt::registry& registry)
     : m_registry { registry }
@@ -42,9 +40,10 @@ OrbiralEngine::Step OrbiralEngine::orbitalStep(const glm::vec3& center, const gl
     return step;
 }
 
-LineBatch OrbiralEngine::calcOrbit(entt::entity object, entt::entity center) const noexcept
+std::vector<Line> OrbiralEngine::calcOrbit(entt::entity object, entt::entity center) const noexcept
 {
-    LineBatch result;
+    std::vector<Line> result;
+    result.reserve(256);
 
     auto [objBody, objTrans] = m_registry.get<OrbitalBody, Transform>(object);
     auto [celBody, celTrans] = m_registry.get<Celestial, Transform>(center);
@@ -63,7 +62,7 @@ LineBatch OrbiralEngine::calcOrbit(entt::entity object, entt::entity center) con
 
         glm::vec3 pos = celTrans.position + orb.ex * (r * std::cos(nu)) + orb.ey * (r * std::sin(nu));
         if (!first) {
-            result.push({ prev, pos });
+            result.push_back({ prev, pos });
         } else {
             first = false;
         }

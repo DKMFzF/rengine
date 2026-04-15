@@ -59,6 +59,7 @@ add_executable(${PROJECT_NAME}
     sources/components/Celestial.hpp
     sources/components/OrbitalBody.hpp
 
+    sources/graphics/RenderBackend.hpp
     sources/graphics/GlHandle.hpp
     sources/graphics/Buffer.hpp
     sources/graphics/Cubemap.hpp
@@ -71,10 +72,11 @@ add_executable(${PROJECT_NAME}
     sources/graphics/Texture.cpp
     sources/graphics/Mesh.hpp
     sources/graphics/Mesh.cpp
-    sources/graphics/LineBatch.hpp
-    sources/graphics/LineBatch.cpp
     sources/graphics/VertexArray.hpp
     sources/graphics/VertexArray.cpp
+
+    sources/graphics/opengl/OglRenderBackend.hpp
+    sources/graphics/opengl/OglRenderBackend.cpp
 
     sources/third-party/stb_image.h
 )

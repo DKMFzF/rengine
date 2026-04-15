@@ -1,11 +1,13 @@
 #pragma once
 
 #include "graphics/Buffer.hpp"
+#include "graphics/RenderBackend.hpp"
 #include "graphics/Shader.hpp"
 #include "graphics/VertexArray.hpp"
 
 #include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
+#include <memory>
 #include <sys/stat.h>
 
 class RendererSystem {
@@ -17,6 +19,9 @@ public:
 
 private:
     entt::registry& m_registry;
+
+    std::unique_ptr<RenderBackend> m_backend;
+
     Shader m_shader;
     Shader m_skyboxShader;
     Shader m_transparentShader;

@@ -8,9 +8,9 @@
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
 #include "graphics/Cubemap.hpp"
-#include "graphics/LineBatch.hpp"
 #include "systems/Clock.hpp"
-#include "utils/utils.hpp"
+
+#include "graphics/opengl/OglRenderBackend.hpp"
 
 #include <array>
 #include <entt/entity/fwd.hpp>
@@ -31,6 +31,7 @@ RendererSystem::RendererSystem(entt::registry& registry)
     , m_transparentShader { "resources/shaders/transparent_v.glsl", "resources/shaders/transparent_f.glsl" }
     , m_linesShader { "resources/shaders/line_v.glsl", "resources/shaders/line_f.glsl" }
 {
+    m_backend.reset(new OglRenderBackend);
     // Skybox
     m_skyboxTexture.reset(
         loadCubemap({ "resources/images/space_skybox/right.png",
@@ -65,8 +66,7 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
     auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
     auto view = camera.getView(cameraTransform.position);
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_backend->clear();
 
     auto view_ = glm::mat4(glm::mat3(view));
     glDepthMask(GL_FALSE);
@@ -97,7 +97,7 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
 
     int drawed = 0;
     auto objects = m_registry.view<Transform, Renderer, BoundingBox>(entt::exclude<Transparent>);
-    LineBatch orientationLines;
+    std::vector<Line> orientationLines;
     for (auto [entity, transform, renderer, bb] : objects.each()) {
         auto aabb = toGlobalAABB(bb, transform);
         if (!frustum.isVisible(aabb))
@@ -119,7 +119,7 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
         renderer.model->draw();
 
         auto front = transform.position + (transform.rotation * glm::vec3(0, 0, -1));
-        orientationLines.push({ transform.position, front });
+        orientationLines.push_back({ transform.position, front });
     }
 
     m_transparentShader.use();
@@ -150,7 +150,8 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
         renderer.texture->bind();
         renderer.model->draw();
 
-        orientationLines.push({ transform.position, transform.position + (transform.rotation * glm::vec3(0, 0, -1)) });
+        auto front = transform.position + (transform.rotation * glm::vec3(0, 0, -1));
+        orientationLines.push_back({ transform.position, front });
     }
 
     ImGui::Begin("Render");
@@ -164,8 +165,9 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
     m_linesShader.setUniform(view, "view");
     m_linesShader.setUniform(proj, "proj");
 
-    orientationLines.draw();
-    LineBatch lines { };
+    m_backend->draw(orientationLines);
+
+    std::vector<Line> lines { };
     for (auto [_, bb, transform, renderer] : m_registry.view<BoundingBox, Transform, Renderer, Picked>().each()) {
         auto model = glm::mat4 { 1.0f };
         model = glm::translate(model, transform.position);
@@ -173,26 +175,25 @@ void RendererSystem::render(const glm::mat4& proj) noexcept
 
         auto linesArray = toLines(bb, transform);
         for (const auto& line : linesArray) {
-            lines.push(line);
+            lines.push_back(line);
         }
 
         if (renderer.drawAABB) {
             auto aabb = toGlobalAABB(bb, transform);
             auto alignedLinesArray = toLinesAligned(aabb, transform);
             for (const auto& line : alignedLinesArray) {
-                lines.push(line);
+                lines.push_back(line);
             }
         }
     }
 
-    lines.draw();
+    m_backend->draw(lines);
 
     auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
-    LineBatch orbitLines { };
     auto celView = m_registry.view<Celestial, Transform>();
     auto [celestial, celTransform] = m_registry.get<Celestial, Transform>(celView.front());
     for (auto [e, transform, body] : m_registry.view<Transform, OrbitalBody>().each()) {
-        body.orbit.draw();
+        m_backend->draw(body.orbit);
     }
 }
 
