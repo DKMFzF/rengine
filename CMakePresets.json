@@ -5,8 +5,32 @@
             "name": "vcpkg",
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "ninja-base",
+            "inherits": "vcpkg",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}"
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "inherits": "ninja-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "inherits": "ninja-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
             }
         },
         {
@@ -27,8 +51,8 @@
             }
         },
         {
-            "name": "debug",
-            "displayName": "Debug",
+            "name": "debug-clang-cl",
+            "displayName": "debug (clang-cl)",
             "inherits": "windows-base",
             "architecture": {
                 "value": "x64",
@@ -39,23 +63,15 @@
             }
         },
         {
-            "name": "release",
-            "displayName": "Release",
-            "inherits": "debug",
+            "name": "release-clang-cl",
+            "displayName": "Release (clang-cl)",
+            "inherits": "windows-base",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
-        {
-            "name": "linux-base",
-            "inherits": "vcpkg",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "installDir": "${sourceDir}/install/${presetName}",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Linux"
             }
         }
     ]
