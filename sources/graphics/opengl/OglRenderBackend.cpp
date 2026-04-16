@@ -1,5 +1,6 @@
 #include "OglRenderBackend.hpp"
 #include "OglMesh.hpp"
+#include "OglTexture.hpp"
 #include "graphics/Buffer.hpp"
 #include "graphics/VertexArray.hpp"
 
@@ -36,6 +37,35 @@ MeshID OglRenderBackend::createMesh(const std::vector<Vertex>& vertices, const s
 
     m_meshes.emplace_back(std::move(mesh));
     return m_meshes.size() - 1;
+}
+
+TextureID OglRenderBackend::createTexture(const Image& image) noexcept
+{
+    OglTexture texture;
+    GLuint glTexture;
+    glGenTextures(1, &glTexture);
+    texture.texture.reset(glTexture);
+
+    glBindTexture(GL_TEXTURE_2D, texture.texture.get());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+        GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, image.data.data());
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    m_textures.emplace_back(std::move(texture));
+    return m_textures.size() - 1;
+}
+
+void OglRenderBackend::bind(TextureID texture, int slot) noexcept
+{
+    assert(m_textures.size() > texture);
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, m_textures[texture].texture.get());
 }
 
 void OglRenderBackend::draw(MeshID mesh) noexcept

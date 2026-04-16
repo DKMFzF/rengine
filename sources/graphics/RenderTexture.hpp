@@ -2,7 +2,6 @@
 
 #include "GlHandle.hpp"
 #include "RenderTarget.hpp"
-#include "Texture.hpp"
 #include <glm/ext/vector_int2.hpp>
 
 class RenderTexture : public Texture, public RenderTarget {

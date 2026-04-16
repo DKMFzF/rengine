@@ -5,7 +5,7 @@
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
 
-ModelObject::ModelObject(entt::registry& registry, std::shared_ptr<Model> model, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular)
+ModelObject::ModelObject(entt::registry& registry, std::shared_ptr<Model> model, TextureID texture, TextureID specular)
     : Object(registry)
 {
     addComponent(Renderer { model, texture, specular });

@@ -3,11 +3,11 @@
 #include "Model.hpp"
 #include "Object.hpp"
 
-#include "graphics/Texture.hpp"
+#include "graphics/types.hpp"
 
 class ModelObject : public Object {
 public:
-    ModelObject(entt::registry& registry, std::shared_ptr<Model> model, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular);
+    ModelObject(entt::registry& registry, std::shared_ptr<Model> model, TextureID texture, TextureID specular);
 
     glm::vec3& position() noexcept;
     glm::quat& rotation() noexcept;

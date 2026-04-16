@@ -117,8 +117,8 @@ void RenderSystem::render(const glm::mat4& proj) noexcept
         m_shader.setUniform(1, "material.specular");
         m_shader.setUniform(32.0f, "material.shininess");
 
-        renderer.texture->bind(0);
-        renderer.specular->bind(1);
+        m_backend->bind(renderer.texture, 0);
+        m_backend->bind(renderer.specular, 1);
 
         auto& meshes = renderer.model->getMeshes();
         for (auto& mesh : meshes) {
@@ -154,7 +154,8 @@ void RenderSystem::render(const glm::mat4& proj) noexcept
 
         auto model = transform.getMatrix();
         m_transparentShader.setUniform(model, "model");
-        renderer.texture->bind();
+        m_backend->bind(renderer.texture, 0);
+        m_backend->bind(renderer.specular, 1);
 
         auto& meshes = renderer.model->getMeshes();
         for (auto& mesh : meshes) {

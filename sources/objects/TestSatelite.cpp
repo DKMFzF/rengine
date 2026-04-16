@@ -8,7 +8,7 @@
 #include "systems/PhysicsEngine.hpp"
 #include <GLFW/glfw3.h>
 
-TestSatelite::TestSatelite(entt::registry& regisrty, std::shared_ptr<Model> model, std::shared_ptr<Texture> texture, std::shared_ptr<Texture> specular)
+TestSatelite::TestSatelite(entt::registry& regisrty, std::shared_ptr<Model> model, TextureID texture, TextureID specular)
     : ModelObject(regisrty, model, texture, specular)
 {
     addComponent(OrbitalBody { { 0.0f, 0.0f, 4.0f } });

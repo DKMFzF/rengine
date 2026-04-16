@@ -1,7 +1,9 @@
 #pragma once
 
 #include "OglMesh.hpp"
+#include "OglTexture.hpp"
 #include "graphics/RenderBackend.hpp"
+#include "graphics/types.hpp"
 #include "utils/types.hpp"
 #include <cstdint>
 #include <vector>
@@ -11,10 +13,14 @@ public:
     void clear() noexcept override;
 
     MeshID createMesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) noexcept override;
+    TextureID createTexture(const Image& image) noexcept override;
+
+    void bind(TextureID texture, int slot = 0) noexcept override;
 
     void draw(MeshID mesh) noexcept override;
     void draw(const std::vector<Line>& lines) noexcept override;
 
 private:
     std::vector<OglMesh> m_meshes;
+    std::vector<OglTexture> m_textures;
 };

@@ -32,9 +32,8 @@
 #include "components/OrbitalBody.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
+#include "graphics/Image.hpp"
 #include "graphics/RenderBackend.hpp"
-#include "graphics/RenderTexture.hpp"
-#include "graphics/Texture.hpp"
 #include "objects/ModelObject.hpp"
 #include "objects/OrbitCamera.hpp"
 #include "objects/TestSatelite.hpp"
@@ -102,8 +101,6 @@ void App::run()
     auto& physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
     auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
 
-    auto renderTex = m_registry.ctx().emplace<std::shared_ptr<RenderTexture>>(std::make_shared<RenderTexture>(glm::ivec2 { 500, 300 }));
-
     RenderSystem renderer { m_registry };
 
     auto xzModel = std::make_shared<Model>("resources/models/cursor.fbx");
@@ -117,7 +114,8 @@ void App::run()
         mesh.meshID = renderBack->createMesh(mesh.vertices, mesh.indices);
     }
 
-    auto whiteTexture = std::make_shared<Texture>("resources/images/white.png");
+    auto whiteImage = loadImage("resources/images/white.png");
+    auto whiteTexture = renderBack->createTexture(whiteImage);
 
     TestSatelite xz { m_registry, xzModel, whiteTexture, whiteTexture };
     ModelObject cube { m_registry, cubeModel, whiteTexture, whiteTexture };
@@ -168,7 +166,6 @@ void App::run()
         ImGui::DragFloat3("front", glm::value_ptr(camera.front), 0.025f);
         ImGui::DragFloat2("near/far", &camera.near, 0.025f);
         ImGui::DragFloat("fov", &camera.fov, 0.1f);
-        ImGui::Image(renderTex->getId(), { 300, 180 }, { 0, 1 }, { 1, 0 });
         ImGui::End();
 
         ImGui::Begin("OrbitEngine");
@@ -223,18 +220,6 @@ void App::run()
 
             physics.applyTransform(entity);
         }
-
-#if 1
-        {
-            auto size = renderTex->getSize();
-            auto aspect = renderTex->getAspect();
-            auto proj = camera.getProj(aspect);
-            renderTex->bindFBO();
-            glViewport(0, 0, size.x, size.y);
-            renderer.render(proj);
-            renderTex->unbindFBO();
-        }
-#endif
 
         glViewport(0, 0, m_windowSize.x, m_windowSize.y);
         renderer.render(proj);
