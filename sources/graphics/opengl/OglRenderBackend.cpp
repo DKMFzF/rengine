@@ -1,4 +1,5 @@
 #include "OglRenderBackend.hpp"
+#include "OglCubemap.hpp"
 #include "OglMesh.hpp"
 #include "OglPipeline.hpp"
 #include "OglShader.hpp"
@@ -71,6 +72,38 @@ PipelineID OglRenderBackend::createPipeline(const PipelineParams& params, const 
     return m_pipelines.size() - 1;
 }
 
+CubemapID OglRenderBackend::createCubemap(const std::vector<Image>& faces) noexcept
+{
+    OglCubemap cubemap;
+
+    cubemap.vao.bind();
+    cubemap.vbo = VertexBuffer { cubemapVertices, sizeof(cubemapVertices) };
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+        (void*)0);
+    glEnableVertexAttribArray(0);
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    cubemap.texture.reset(textureID);
+
+    int i = 0;
+    for (const auto& face : faces) {
+        auto format = face.channels == 3 ? GL_RGB : GL_RGBA;
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, face.width, face.height, 0, format, GL_UNSIGNED_BYTE, face.data.data());
+        i++;
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    m_cubemaps.emplace_back(std::move(cubemap));
+    return m_cubemaps.size() - 1;
+}
+
 void OglRenderBackend::bindTexture(TextureID texture, int slot) noexcept
 {
     assert(m_textures.size() > texture);
@@ -106,10 +139,23 @@ void OglRenderBackend::drawLines(const std::vector<Line>& lines) noexcept
     glDrawArrays(GL_LINES, 0, lines.size() * 2);
 }
 
-void OglRenderBackend::clear() noexcept
+void OglRenderBackend::drawCubemap(CubemapID cubemap) noexcept
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    assert(m_cubemaps.size() > cubemap);
+    m_cubemaps[cubemap].vao.bind();
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemaps[cubemap].texture.get());
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void OglRenderBackend::clearColor() noexcept
+{
+    glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+void OglRenderBackend::clearDepth() noexcept
+{
+    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 void OglRenderBackend::setValue(PipelineID pipeline, const std::string& name, Value value) noexcept

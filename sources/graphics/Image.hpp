@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "Cubemap.hpp"
 #include "third-party/stb_image.h"
 
 struct Image {

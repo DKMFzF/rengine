@@ -7,23 +7,19 @@
 #include "components/OrbitalBody.hpp"
 #include "components/Renderer.hpp"
 #include "components/Transform.hpp"
-#include "graphics/Cubemap.hpp"
 #include "graphics/RenderBackend.hpp"
-#include "systems/Clock.hpp"
-
 #include "graphics/opengl/OglRenderBackend.hpp"
+#include "utils/utils.hpp"
 
-#include <array>
 #include <entt/entity/fwd.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <imgui.h>
-#include <memory>
-#include <numeric>
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/geometric.hpp>
 #include <glm/gtx/norm.hpp>
 
-#include <glm/geometric.hpp>
+#include <array>
+#include <memory>
 #include <vector>
 
 RenderSystem::RenderSystem(entt::registry& registry)
@@ -35,22 +31,10 @@ RenderSystem::RenderSystem(entt::registry& registry)
     m_mainPipe = m_backend->createPipeline({ "resources/shaders/main_v.glsl", "resources/shaders/main_f.glsl" }, RenderState { });
     m_transparentPipe = m_backend->createPipeline({ "resources/shaders/transparent_v.glsl", "resources/shaders/transparent_f.glsl" }, RenderState { });
     m_skyboxPipe = m_backend->createPipeline({ "resources/shaders/cubemap_v.glsl", "resources/shaders/cubemap_f.glsl" }, RenderState { .depth = false });
-    m_linesPipe = m_backend->createPipeline({ "resources/shaders/line_v.glsl", "resources/shaders/line_f.glsl" }, RenderState { });
+    m_linesPipe = m_backend->createPipeline({ "resources/shaders/line_v.glsl", "resources/shaders/line_f.glsl" }, RenderState { .depth = false });
 
-    // Skybox
-    m_skyboxTexture.reset(
-        loadCubemap({ "resources/images/space_skybox/right.png",
-            "resources/images/space_skybox/left.png",
-            "resources/images/space_skybox/top.png",
-            "resources/images/space_skybox/bottom.png",
-            "resources/images/space_skybox/front.png",
-            "resources/images/space_skybox/back.png" }));
-
-    m_skyboxVAO.bind();
-    m_skyboxVBO = VertexBuffer { skyboxVertices, sizeof(skyboxVertices) };
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
-        (void*)0);
-    glEnableVertexAttribArray(0);
+    auto cubeImages = loadCubeImages("resources/images/space_skybox");
+    m_cubemap = m_backend->createCubemap(cubeImages);
 }
 
 std::array<Line, 12> toLines(const BoundingBox& aabb, const Transform& transform) noexcept;
@@ -58,28 +42,71 @@ std::array<Line, 12> toLinesAligned(const BoundingBox& aabb, const Transform& tr
 
 void RenderSystem::render(const glm::mat4& proj) noexcept
 {
-    m_lastFrametimes[m_currentFrame] = m_registry.ctx().get<Clock>().getDelta();
-    m_currentFrame = (m_currentFrame + 1) % FRAMES;
-
-    if (m_currentFrame == 0) {
-        float sum = std::accumulate(m_lastFrametimes.begin(), m_lastFrametimes.end(), 0.0f);
-        float average = sum / FRAMES;
-        FPS = 1.0f / average;
-    }
-
     auto cameraEntity = m_registry.view<Camera, Transform>().front();
     auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
     auto view = camera.getView(cameraTransform.position);
+    Frustum frustum { proj * view };
 
-    m_backend->clear();
+    m_backend->clearColor();
+    m_backend->clearDepth();
+
+    renderCubemap(proj);
+    renderMeshes(proj);
+
+    m_backend->clearDepth();
+
+    m_backend->bindPipeline(m_linesPipe);
+    m_backend->setValue(m_linesPipe, "view", view);
+    m_backend->setValue(m_linesPipe, "proj", proj);
+
+    std::vector<Line> lines { };
+    for (auto [_, bb, transform, renderer] : m_registry.view<BoundingBox, Transform, Renderer, Picked>().each()) {
+        auto model = glm::mat4 { 1.0f };
+        model = glm::translate(model, transform.position);
+        model = glm::scale(model, transform.scale);
+
+        auto linesArray = toLines(bb, transform);
+        for (const auto& line : linesArray) {
+            lines.push_back(line);
+        }
+
+        if (renderer.drawAABB) {
+            auto aabb = toGlobalAABB(bb, transform);
+            auto alignedLinesArray = toLinesAligned(aabb, transform);
+            for (const auto& line : alignedLinesArray) {
+                lines.push_back(line);
+            }
+        }
+    }
+
+    m_backend->drawLines(lines);
+
+    auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
+    auto celView = m_registry.view<Celestial, Transform>();
+    auto [celestial, celTransform] = m_registry.get<Celestial, Transform>(celView.front());
+    for (auto [e, transform, body] : m_registry.view<Transform, OrbitalBody>().each()) {
+        m_backend->drawLines(body.orbit);
+    }
+}
+
+void RenderSystem::renderCubemap(const glm::mat4& proj) noexcept
+{
+    auto cameraEntity = m_registry.view<Camera, Transform>().front();
+    auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
+    auto view = camera.getView(cameraTransform.position);
 
     auto view_ = glm::mat4(glm::mat3(view));
     m_backend->bindPipeline(m_skyboxPipe);
     m_backend->setValue(m_skyboxPipe, "view", view_);
     m_backend->setValue(m_skyboxPipe, "proj", proj);
-    m_skyboxVAO.bind();
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_skyboxTexture.get());
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    m_backend->drawCubemap(m_cubemap);
+}
+
+void RenderSystem::renderMeshes(const glm::mat4& proj) noexcept
+{
+    auto cameraEntity = m_registry.view<Camera, Transform>().front();
+    auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
+    auto view = camera.getView(cameraTransform.position);
 
     m_backend->bindPipeline(m_mainPipe);
     m_backend->setValue(m_mainPipe, "view", view);
@@ -96,7 +123,6 @@ void RenderSystem::render(const glm::mat4& proj) noexcept
 
     int drawed = 0;
     auto objects = m_registry.view<Transform, Renderer, BoundingBox>(entt::exclude<Transparent>);
-    std::vector<Line> orientationLines;
     for (auto [entity, transform, renderer, bb] : objects.each()) {
         auto aabb = toGlobalAABB(bb, transform);
         if (!frustum.isVisible(aabb))
@@ -119,7 +145,6 @@ void RenderSystem::render(const glm::mat4& proj) noexcept
         }
 
         auto front = transform.position + (transform.rotation * glm::vec3(0, 0, -1));
-        orientationLines.push_back({ transform.position, front });
     }
 
     m_backend->bindPipeline(m_transparentPipe);
@@ -157,49 +182,6 @@ void RenderSystem::render(const glm::mat4& proj) noexcept
         }
 
         auto front = transform.position + (transform.rotation * glm::vec3(0, 0, -1));
-        orientationLines.push_back({ transform.position, front });
-    }
-
-    ImGui::Begin("Render");
-    ImGui::Text("FPS: %f", FPS);
-    ImGui::Text("%d objects drawed", drawed);
-    ImGui::End();
-
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    m_backend->bindPipeline(m_linesPipe);
-    m_backend->setValue(m_linesPipe, "view", view);
-    m_backend->setValue(m_linesPipe, "proj", proj);
-
-    m_backend->drawLines(orientationLines);
-
-    std::vector<Line> lines { };
-    for (auto [_, bb, transform, renderer] : m_registry.view<BoundingBox, Transform, Renderer, Picked>().each()) {
-        auto model = glm::mat4 { 1.0f };
-        model = glm::translate(model, transform.position);
-        model = glm::scale(model, transform.scale);
-
-        auto linesArray = toLines(bb, transform);
-        for (const auto& line : linesArray) {
-            lines.push_back(line);
-        }
-
-        if (renderer.drawAABB) {
-            auto aabb = toGlobalAABB(bb, transform);
-            auto alignedLinesArray = toLinesAligned(aabb, transform);
-            for (const auto& line : alignedLinesArray) {
-                lines.push_back(line);
-            }
-        }
-    }
-
-    m_backend->drawLines(lines);
-
-    auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
-    auto celView = m_registry.view<Celestial, Transform>();
-    auto [celestial, celTransform] = m_registry.get<Celestial, Transform>(celView.front());
-    for (auto [e, transform, body] : m_registry.view<Transform, OrbitalBody>().each()) {
-        m_backend->drawLines(body.orbit);
     }
 }
 

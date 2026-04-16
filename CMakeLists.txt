@@ -63,7 +63,6 @@ add_executable(${PROJECT_NAME}
     sources/graphics/types.hpp
     sources/graphics/GlHandle.hpp
     sources/graphics/Buffer.hpp
-    sources/graphics/Cubemap.hpp
     sources/graphics/RenderTarget.hpp
     sources/graphics/Mesh.hpp
     sources/graphics/Image.hpp
@@ -77,6 +76,7 @@ add_executable(${PROJECT_NAME}
     sources/graphics/opengl/OglPipeline.hpp
     sources/graphics/opengl/OglShader.hpp
     sources/graphics/opengl/OglShader.cpp
+    sources/graphics/opengl/OglCubemap.hpp
 
     sources/third-party/stb_image.h
     sources/third-party/stb_image.c
