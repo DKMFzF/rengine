@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Mesh.hpp"
+#include "graphics/Mesh.hpp"
 #include <assimp/scene.h>
 #include <vector>
 
 class Model {
 public:
     Model(const std::string& path);
-    void draw() const;
     BoundingBox getAABB() const noexcept;
     BoundingBox getLocalAABB() const noexcept;
+    const std::vector<Mesh>& getMeshes() const noexcept;
+    std::vector<Mesh>& Model::getMeshes() noexcept;
 
 private:
     void load(const std::string& path);
@@ -21,5 +22,5 @@ private:
     std::vector<Mesh> m_meshes;
     BoundingBox m_aabb;
     BoundingBox m_localAABB;
-    glm::vec3 m_offset {0.0f};
+    glm::vec3 m_offset { 0.0f };
 };

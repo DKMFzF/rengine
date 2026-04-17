@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Input.hpp"
-#include "utils.hpp"
+#include "GlHandle.hpp"
 
 template <GLenum type, GLenum usage = GL_STATIC_DRAW>
 class Buffer {

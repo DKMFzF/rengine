@@ -1,10 +1,11 @@
 #pragma once
 
-#include "LineBatch.hpp"
+#include "utils/types.hpp"
 #include <entt/entity/fwd.hpp>
 #include <entt/entt.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/glm.hpp>
+#include <vector>
 
 class OrbiralEngine {
 public:
@@ -16,7 +17,7 @@ public:
         glm::vec3 velocity;
     };
     Step orbitalStep(const glm::vec3& center, const glm::vec3& position, const glm::vec3& velocity, float GM) const noexcept;
-    LineBatch calcOrbit(entt::entity object, entt::entity center) const noexcept;
+    std::vector<Line> calcOrbit(entt::entity object, entt::entity center) const noexcept;
     struct OrbitParams {
         glm::vec3 center;
         glm::vec3 ex; // major axis direction

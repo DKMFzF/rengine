@@ -13,6 +13,7 @@
 #include <Jolt/RegisterTypes.h>
 
 #include <GLFW/glfw3.h>
+#include <cstdint>
 #include <entt/entity/fwd.hpp>
 #include <entt/signal/fwd.hpp>
 #include <glm/geometric.hpp>
@@ -26,21 +27,23 @@
 #include "BoundingBox.hpp"
 #include "Events.hpp"
 #include "Input.hpp"
-#include "RenderTexture.hpp"
-#include "Texture.hpp"
 #include "components/Body.hpp"
 #include "components/Camera.hpp"
 #include "components/Celestial.hpp"
+#include "components/MeshRenderer.hpp"
 #include "components/OrbitalBody.hpp"
-#include "components/Renderer.hpp"
 #include "components/Transform.hpp"
+#include "graphics/Image.hpp"
+#include "graphics/RenderBackend.hpp"
+#include "graphics/RenderLayer.hpp"
+#include "objects/FlyingCamera.hpp"
 #include "objects/ModelObject.hpp"
 #include "objects/OrbitCamera.hpp"
 #include "objects/TestSatelite.hpp"
 #include "systems/Clock.hpp"
 #include "systems/OrbitalEngine.hpp"
 #include "systems/PhysicsEngine.hpp"
-#include "systems/RendererSystem.hpp"
+#include "systems/RenderSystem.hpp"
 
 #include <cstdlib>
 #include <memory>
@@ -101,14 +104,21 @@ void App::run()
     auto& physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
     auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
 
-    auto renderTex = m_registry.ctx().emplace<std::shared_ptr<RenderTexture>>(std::make_shared<RenderTexture>(glm::ivec2 { 500, 300 }));
-
-    RendererSystem renderer { m_registry };
+    RenderSystem renderer { m_registry, (uint32_t)m_windowSize.x, (uint32_t)m_windowSize.y };
 
     auto xzModel = std::make_shared<Model>("resources/models/cursor.fbx");
     auto cubeModel = std::make_shared<Model>("resources/models/cube.obj");
 
-    auto whiteTexture = std::make_shared<Texture>("resources/images/white.png");
+    auto renderBack = m_registry.ctx().get<std::shared_ptr<RenderBackend>>();
+    for (auto& mesh : xzModel->getMeshes()) {
+        mesh.meshID = renderBack->createMesh(mesh.vertices, mesh.indices);
+    }
+    for (auto& mesh : cubeModel->getMeshes()) {
+        mesh.meshID = renderBack->createMesh(mesh.vertices, mesh.indices);
+    }
+
+    auto whiteImage = loadImage("resources/images/white.png");
+    auto whiteTexture = renderBack->createTexture(whiteImage);
 
     TestSatelite xz { m_registry, xzModel, whiteTexture, whiteTexture };
     ModelObject cube { m_registry, cubeModel, whiteTexture, whiteTexture };
@@ -116,11 +126,15 @@ void App::run()
     xz.position() = { -20.0f, 0.0f, 0.0f };
     xz.addComponent(Picked { });
 
-    OrbitCamera cam { m_registry, xz.getEntity() };
+    // OrbitCamera cam { m_registry, xz.getEntity() };
+    FlyingCamera cam { m_registry, { } };
+
+    renderer.setRenderLayerCamera(DEFAULT_RENDER_LAYER, cam.getEntity());
+    auto layer = renderer.addRenderLayer(200, 200, cam.getEntity());
 
     cube.addComponent(Celestial { 1000.0f });
 
-    physics.createCollider(xz.getEntity(), true);
+    physics.createCollider(cube.getEntity(), false);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -159,7 +173,10 @@ void App::run()
         ImGui::DragFloat3("front", glm::value_ptr(camera.front), 0.025f);
         ImGui::DragFloat2("near/far", &camera.near, 0.025f);
         ImGui::DragFloat("fov", &camera.fov, 0.1f);
-        ImGui::Image(renderTex->getId(), { 300, 180 }, { 0, 1 }, { 1, 0 });
+        ImGui::End();
+
+        ImGui::Begin("Layers");
+        ImGui::Image(renderer.getGuiTextureFromLayer(0), { 200, 200 }, { 0, 1 }, { 1, 0 });
         ImGui::End();
 
         ImGui::Begin("OrbitEngine");
@@ -169,10 +186,10 @@ void App::run()
 
         auto proj = camera.getProj((float)m_windowSize.x / m_windowSize.y);
 
-        auto pickedView = m_registry.view<Picked, Transform, Renderer>();
+        auto pickedView = m_registry.view<Picked, Transform, MeshRenderer>();
         if (pickedView.size_hint() > 0) {
             auto entity = pickedView.front();
-            auto [transform, renderer] = m_registry.get<Transform, Renderer>(entity);
+            auto [transform, renderer] = m_registry.get<Transform, MeshRenderer>(entity);
 
             ImGui::Begin("Inspector");
 
@@ -184,6 +201,11 @@ void App::run()
 
             ImGui::SeparatorText("Renderer");
             ImGui::Checkbox("Draw AABB", &renderer.drawAABB);
+            auto l = renderer.layer;
+            ImGui::DragInt("render layer", &l);
+            if (renderer.layer != l) {
+                renderer.layer = l;
+            }
 
             if (m_registry.all_of<OrbitalBody>(entity)) {
                 auto& body = m_registry.get<OrbitalBody>(entity);
@@ -215,20 +237,7 @@ void App::run()
             physics.applyTransform(entity);
         }
 
-#if 1
-        {
-            auto size = renderTex->getSize();
-            auto aspect = renderTex->getAspect();
-            auto proj = camera.getProj(aspect);
-            renderTex->bindFBO();
-            glViewport(0, 0, size.x, size.y);
-            renderer.render(proj);
-            renderTex->unbindFBO();
-        }
-#endif
-
-        glViewport(0, 0, m_windowSize.x, m_windowSize.y);
-        renderer.render(proj);
+        renderer.render();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -6,7 +6,7 @@
 #include <string>
 
 #include "Input.hpp"
-#include "utils.hpp"
+#include "utils/glfw.hpp"
 
 class App {
 public:

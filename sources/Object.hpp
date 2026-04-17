@@ -2,8 +2,6 @@
 
 #include <entt/entt.hpp>
 
-#include <tuple>
-
 class Object {
 public:
     Object(entt::registry& registry);

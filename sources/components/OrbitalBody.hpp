@@ -1,9 +1,10 @@
 #pragma once
 
-#include "LineBatch.hpp"
+#include "utils/types.hpp"
 #include <glm/glm.hpp>
+#include <vector>
 
 struct OrbitalBody {
     glm::vec3 velocity { };
-    LineBatch orbit;
+    std::vector<Line> orbit;
 };
