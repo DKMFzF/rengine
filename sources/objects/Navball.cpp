@@ -38,9 +38,6 @@ void Navball::update() noexcept
     auto& celTrans = m_registry.get<Transform>(celEntity);
     auto [camera, camTrans] = m_registry.get<Camera, Transform>(m_cameraEntity);
 
-    auto fix_pitch = glm::angleAxis(glm::pi<float>(), glm::vec3(1, 0, 0));
-    auto fix_yaw = glm::angleAxis(glm::pi<float>(), glm::vec3(0, 1, 0));
-
     glm::vec3 surfaceUp = glm::normalize(targetTrans.position - celTrans.position);
     glm::vec3 worldNorth = glm::vec3(0, 1, 0);
     if (glm::abs(glm::dot(surfaceUp, worldNorth)) > 0.999f)
@@ -50,6 +47,10 @@ void Navball::update() noexcept
     glm::mat3 surfaceBasis = glm::mat3(east, surfaceUp, north);
     glm::quat surfaceRotation = glm::quat_cast(surfaceBasis);
     glm::quat relativeRot = glm::inverse(surfaceRotation) * targetTrans.rotation;
+
+    auto fix_pitch = glm::angleAxis(glm::pi<float>(), glm::vec3(1, 0, 0));
+    auto fix_yaw = glm::angleAxis(glm::pi<float>(), glm::vec3(0, 1, 0));
     auto align_fix = glm::angleAxis(glm::half_pi<float>(), glm::vec3(1, 0, 0));
+    
     transform.rotation = fix_pitch * fix_yaw * glm::inverse(relativeRot) * align_fix * -fix_pitch;
 }
