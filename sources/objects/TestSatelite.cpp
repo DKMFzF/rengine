@@ -12,6 +12,7 @@ TestSatelite::TestSatelite(entt::registry& regisrty, std::shared_ptr<Model> mode
     : ModelObject(regisrty, model, texture, specular)
 {
     addComponent(OrbitalBody { { 0.0f, 0.0f, 4.0f } });
+    addComponent(NavballSourceTag { });
     auto& physics = m_registry.ctx().get<PhysicsEngine>();
     physics.createCollider(getEntity(), true);
 }

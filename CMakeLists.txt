@@ -40,6 +40,8 @@ add_executable(${PROJECT_NAME}
     sources/Object.cpp
     sources/BoundingBox.hpp
 
+    sources/objects/Navball.cpp
+    sources/objects/Navball.hpp
     sources/objects/FlyingCamera.hpp
     sources/objects/FlyingCamera.cpp
     sources/objects/OrbitCamera.hpp

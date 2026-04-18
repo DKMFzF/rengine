@@ -1,0 +1,55 @@
+#include "Navball.hpp"
+#include "ModelObject.hpp"
+#include "TestSatelite.hpp"
+#include "components/Camera.hpp"
+#include "components/Celestial.hpp"
+#include "components/MeshRenderer.hpp"
+#include "components/Transform.hpp"
+#include "systems/RenderSystem.hpp"
+#include <entt/entity/fwd.hpp>
+#include <glm/ext/matrix_projection.hpp>
+#include <glm/ext/quaternion_float.hpp>
+#include <glm/ext/quaternion_geometric.hpp>
+#include <glm/ext/quaternion_transform.hpp>
+#include <glm/geometric.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/matrix.hpp>
+
+Navball::Navball(entt::registry& registry, std::shared_ptr<Model> model, TextureID texture)
+    : ModelObject(registry, model, texture, texture)
+{
+    m_cameraEntity = registry.create();
+    auto& transform = getComponent<Transform>();
+    auto cameraPos = (transform.rotation * glm::vec3 { 0, 0, 4.0f });
+
+    registry.emplace<Camera>(m_cameraEntity, Camera { .fov = 30.0f, .front = glm::normalize(-cameraPos) });
+    registry.emplace<Transform>(m_cameraEntity, Transform { .position = cameraPos });
+    m_renderlayer = registry.ctx().get<std::reference_wrapper<RenderSystem>>().get().addRenderLayer(400, 400, m_cameraEntity);
+    getComponent<MeshRenderer>().layer = m_renderlayer;
+}
+
+void Navball::update() noexcept
+{
+    auto& transform = getComponent<Transform>();
+    auto target = m_registry.view<NavballSourceTag>().front();
+    auto& targetTrans = m_registry.get<Transform>(target);
+    auto celEntity = m_registry.view<Celestial>().front();
+    auto& celTrans = m_registry.get<Transform>(celEntity);
+    auto [camera, camTrans] = m_registry.get<Camera, Transform>(m_cameraEntity);
+
+    auto fix_pitch = glm::angleAxis(glm::pi<float>(), glm::vec3(1, 0, 0));
+    auto fix_yaw = glm::angleAxis(glm::pi<float>(), glm::vec3(0, 1, 0));
+
+    glm::vec3 surfaceUp = glm::normalize(targetTrans.position - celTrans.position);
+    glm::vec3 worldNorth = glm::vec3(0, 1, 0);
+    if (glm::abs(glm::dot(surfaceUp, worldNorth)) > 0.999f)
+        worldNorth = glm::vec3(0, 0, 1);
+    glm::vec3 east = glm::normalize(glm::cross(worldNorth, surfaceUp));
+    glm::vec3 north = glm::cross(surfaceUp, east);
+    glm::mat3 surfaceBasis = glm::mat3(east, surfaceUp, north);
+    glm::quat surfaceRotation = glm::quat_cast(surfaceBasis);
+    glm::quat relativeRot = glm::inverse(surfaceRotation) * targetTrans.rotation;
+    auto align_fix = glm::angleAxis(glm::half_pi<float>(), glm::vec3(1, 0, 0));
+    transform.rotation = fix_pitch * fix_yaw * glm::inverse(relativeRot) * align_fix * -fix_pitch;
+}

@@ -1,0 +1,19 @@
+#pragma once
+
+#include "Model.hpp"
+#include "ModelObject.hpp"
+#include "graphics/types.hpp"
+#include <entt/entity/fwd.hpp>
+#include <memory>
+
+class Navball : public ModelObject {
+public:
+    Navball(entt::registry& registry, std::shared_ptr<Model> model, TextureID texture);
+
+    void update() noexcept;
+    int getRenderLayer() const noexcept { return m_renderlayer; }
+
+private:
+    entt::entity m_cameraEntity;
+    int m_renderlayer;
+};

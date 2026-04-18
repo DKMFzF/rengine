@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <entt/entity/fwd.hpp>
 #include <entt/signal/fwd.hpp>
+#include <functional>
 #include <glm/geometric.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -36,8 +37,8 @@
 #include "graphics/Image.hpp"
 #include "graphics/RenderBackend.hpp"
 #include "graphics/RenderLayer.hpp"
-#include "objects/FlyingCamera.hpp"
 #include "objects/ModelObject.hpp"
+#include "objects/Navball.hpp"
 #include "objects/OrbitCamera.hpp"
 #include "objects/TestSatelite.hpp"
 #include "systems/Clock.hpp"
@@ -105,9 +106,11 @@ void App::run()
     auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
 
     RenderSystem renderer { m_registry, (uint32_t)m_windowSize.x, (uint32_t)m_windowSize.y };
+    m_registry.ctx().emplace<std::reference_wrapper<RenderSystem>>(renderer);
 
     auto xzModel = std::make_shared<Model>("resources/models/cursor.fbx");
     auto cubeModel = std::make_shared<Model>("resources/models/cube.obj");
+    auto sphereModel = std::make_shared<Model>("resources/models/sphere.fbx");
 
     auto renderBack = m_registry.ctx().get<std::shared_ptr<RenderBackend>>();
     for (auto& mesh : xzModel->getMeshes()) {
@@ -116,21 +119,24 @@ void App::run()
     for (auto& mesh : cubeModel->getMeshes()) {
         mesh.meshID = renderBack->createMesh(mesh.vertices, mesh.indices);
     }
+    for (auto& mesh : sphereModel->getMeshes()) {
+        mesh.meshID = renderBack->createMesh(mesh.vertices, mesh.indices);
+    }
 
     auto whiteImage = loadImage("resources/images/white.png");
+    auto navballImage = loadImage("resources/images/navball_brownblue.png");
     auto whiteTexture = renderBack->createTexture(whiteImage);
+    auto navballTexture = renderBack->createTexture(navballImage);
 
     TestSatelite xz { m_registry, xzModel, whiteTexture, whiteTexture };
     ModelObject cube { m_registry, cubeModel, whiteTexture, whiteTexture };
+    Navball navball { m_registry, sphereModel, navballTexture };
 
     xz.position() = { -20.0f, 0.0f, 0.0f };
     xz.addComponent(Picked { });
 
-    // OrbitCamera cam { m_registry, xz.getEntity() };
-    FlyingCamera cam { m_registry, { } };
-
+    OrbitCamera cam { m_registry, xz.getEntity() };
     renderer.setRenderLayerCamera(DEFAULT_RENDER_LAYER, cam.getEntity());
-    auto layer = renderer.addRenderLayer(200, 200, cam.getEntity());
 
     cube.addComponent(Celestial { 1000.0f });
 
@@ -153,6 +159,7 @@ void App::run()
             orbital.update();
         cam.update();
         xz.update();
+        navball.update();
 
         auto cameraEntity = m_registry.view<Camera, Transform>().front();
         auto [camera, cameraTransform] = m_registry.get<Camera, Transform>(cameraEntity);
@@ -175,9 +182,40 @@ void App::run()
         ImGui::DragFloat("fov", &camera.fov, 0.1f);
         ImGui::End();
 
-        ImGui::Begin("Layers");
-        ImGui::Image(renderer.getGuiTextureFromLayer(0), { 200, 200 }, { 0, 1 }, { 1, 0 });
-        ImGui::End();
+        {
+            ImGui::Begin("Navball");
+
+            ImVec2 size(400, 400);
+
+            // рисуем изображение
+            ImVec2 pos = ImGui::GetCursorScreenPos();
+            ImGui::Image(renderer.getGuiTextureFromLayer(0), size, { 0, 1 }, { 1, 0 });
+
+            // получаем draw list окна
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+            // центр изображения
+            ImVec2 center = ImVec2(pos.x + size.x * 0.5f, pos.y + size.y * 0.5f);
+
+            // параметры крестовины
+            float xlen = 20.0f;
+            float ylen = 10.0f;
+            ImU32 color = IM_COL32(255, 255, 255, 255);
+
+            // горизонтальная линия
+            draw_list->AddLine(
+                ImVec2(center.x - xlen, center.y),
+                ImVec2(center.x + xlen, center.y),
+                color, 1.5f);
+
+            // вертикальная линия
+            draw_list->AddLine(
+                ImVec2(center.x, center.y - ylen),
+                ImVec2(center.x, center.y + ylen),
+                color, 1.5f);
+
+            ImGui::End();
+        }
 
         ImGui::Begin("OrbitEngine");
         ImGui::DragFloat("GM", &cube.getComponent<Celestial>().GM);
@@ -314,4 +352,5 @@ void App::framebufferSizeCallback(GLFWwindow* window, int width, int height) noe
     auto& app = *static_cast<App*>(glfwGetWindowUserPointer(window));
     app.m_windowSize = { width, height };
     app.m_dispatcher.trigger<Event::WindowResize>({ { app.m_windowSize } });
+    app.m_registry.ctx().get<std::reference_wrapper<RenderSystem>>().get().resize(width, height);
 }
