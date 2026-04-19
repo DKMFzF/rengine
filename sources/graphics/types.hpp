@@ -42,4 +42,4 @@ struct PipelineParams {
     std::string fragmentPath;
 };
 
-using Value = std::variant<glm::mat4, glm::vec3, float, int>;
+using Value = std::variant<glm::mat4, glm::vec4, glm::vec3, float, int>;

@@ -63,6 +63,14 @@ void OglShader::setUniform<glm::mat4>(const glm::mat4& value,
 }
 
 template <>
+void OglShader::setUniform<glm::vec4>(const glm::vec4& value,
+    const std::string& name) noexcept
+{
+    auto ptr = glGetUniformLocation(m_program.get(), name.c_str());
+    glUniform4fv(ptr, 1, glm::value_ptr(value));
+}
+
+template <>
 void OglShader::setUniform<glm::vec3>(const glm::vec3& value,
     const std::string& name) noexcept
 {

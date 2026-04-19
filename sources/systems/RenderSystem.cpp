@@ -147,8 +147,6 @@ void RenderSystem::renderLayerLines(int nlayer, const std::vector<entt::entity>&
     auto view = camera.getView(transform.position);
     auto proj = camera.getProj((float)size.x / size.y);
 
-    m_backend->clearDepth();
-
     renderLines(entities, cameraEntity, view, proj);
 }
 
@@ -216,6 +214,7 @@ void RenderSystem::renderLines(const std::vector<entt::entity>& entities, entt::
 
     for (auto entity : entities) {
         auto& renderer = m_registry.get<LineRenderer>(entity);
+        m_backend->setValue(m_linesPipe, "color", renderer.color);
         m_backend->drawLines(renderer.lines);
     }
 }

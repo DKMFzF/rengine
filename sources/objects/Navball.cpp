@@ -74,4 +74,5 @@ void Navball::update() noexcept
         { targetTrans.position, targetTrans.position + surfaceUp },
         { targetTrans.position, celTrans.position },
     };
+    renderer.color = {1.0f, 1.0f, 1.0f, 0.5f};
 }
