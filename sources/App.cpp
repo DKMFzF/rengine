@@ -16,6 +16,8 @@
 #include <cstdint>
 #include <entt/entity/fwd.hpp>
 #include <entt/signal/fwd.hpp>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <glm/geometric.hpp>
 #include <glm/glm.hpp>
@@ -47,9 +49,9 @@
 #include "systems/RenderSystem.hpp"
 
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
-#include <iostream>
 
 float random(float min, float max)
 {
@@ -87,7 +89,7 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
     m_registry.ctx().emplace<Clock>();
 
     glfwSetWindowCloseCallback(m_window.get(), windowCloseCallback);
-    glfwSetFramebufferSizeCallback(m_window.get(), framebufferSizeCallback);    
+    glfwSetFramebufferSizeCallback(m_window.get(), framebufferSizeCallback);
 }
 
 void App::run()
@@ -154,11 +156,15 @@ void App::run()
     glfwGetWindowContentScale(m_window.get(), &scale.x, &scale.y);
     ImGuiStyle& style = ImGui::GetStyle();
     style.ScaleAllSizes(scale.x);
-    io.Fonts->Clear();
+
     ImFontConfig cfg;
-    cfg.SizePixels = 24.0f;
-    io.FontDefault = io.Fonts->AddFontDefault(&cfg);
+    auto fontSize = 13.0f * scale.x;
+
+    auto* font = io.Fonts->AddFontFromFileTTF("C:/Users/andre/dev/rengine/resources/fonts/Ubuntu-Bold.ttf",
+        fontSize,
+        &cfg);
     io.Fonts->Build();
+    io.FontDefault = font; 
 
     bool simulateOrbital = false;
     while (m_running) {
