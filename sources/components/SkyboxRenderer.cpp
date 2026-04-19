@@ -22,6 +22,7 @@ void SkyboxPass::render(RenderBackend& backend, const RenderContext& ctx) noexce
     for (auto [layer, entity] : m_layers) {
         renderLayer(layer, entity, backend, ctx);
     }
+    m_layers.clear();
 }
 
 void SkyboxPass::renderLayer(int nlayer, entt::entity entity, RenderBackend& backend, const RenderContext& ctx) noexcept

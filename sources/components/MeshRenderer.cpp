@@ -23,6 +23,7 @@ void MeshPass::render(RenderBackend& backend, const RenderContext& ctx) noexcept
     for (auto layer : m_layers) {
         renderLayer(layer.first, layer.second, backend, ctx);
     }
+    m_layers.clear();
 }
 
 void MeshPass::renderLayer(int nlayer, const std::vector<entt::entity> entities, RenderBackend& backend, RenderContext ctx) noexcept
