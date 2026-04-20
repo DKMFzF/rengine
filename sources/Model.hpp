@@ -10,7 +10,7 @@ public:
     BoundingBox getAABB() const noexcept;
     BoundingBox getLocalAABB() const noexcept;
     const std::vector<Mesh>& getMeshes() const noexcept;
-    std::vector<Mesh>& Model::getMeshes() noexcept;
+    std::vector<Mesh>& getMeshes() noexcept;
 
 private:
     void load(const std::string& path);
