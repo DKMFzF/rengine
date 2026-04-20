@@ -20,7 +20,7 @@
 Navball::Navball(entt::registry& registry, std::shared_ptr<Model> model, TextureID texture)
     : ModelObject(registry, model, texture, texture)
 {
-    addComponent<LineRenderer>(LineRenderer{});
+    addComponent<LineRenderer>(LineRenderer { });
 
     m_debugLines = registry.create();
     registry.emplace<LineRenderer>(m_debugLines);
@@ -64,7 +64,11 @@ void Navball::update() noexcept
     auto fix_yaw = glm::angleAxis(glm::pi<float>(), glm::vec3(0, 1, 0));
     auto align_fix = glm::angleAxis(glm::half_pi<float>(), glm::vec3(0, -1, 0));
 
+#if 1
     transform.rotation = fix_pitch * fix_yaw * glm::inverse(relativeRot) * align_fix * -fix_pitch;
+#else
+    transform.rotation = fix_pitch * fix_yaw * glm::inverse(targetTrans.rotation) * align_fix * -fix_pitch;
+#endif
 
     auto& renderer = m_registry.get<LineRenderer>(m_debugLines);
     renderer.lines = {
@@ -73,5 +77,17 @@ void Navball::update() noexcept
         { targetTrans.position, targetTrans.position + surfaceUp },
         { targetTrans.position, celTrans.position },
     };
-    renderer.color = {1.0f, 1.0f, 1.0f, 0.5f};
+    renderer.color = { 1.0f, 1.0f, 1.0f, 0.5f };
+}
+
+glm::quat Navball::getIndicatorsQuat() const noexcept
+{
+    auto target = m_registry.view<NavballSourceTag>().front();
+    auto& targetTrans = m_registry.get<Transform>(target);
+
+    auto fix_pitch = glm::angleAxis(glm::pi<float>(), glm::vec3(1, 0, 0));
+    auto fix_yaw = glm::angleAxis(glm::pi<float>(), glm::vec3(0, 1, 0));
+    auto align_fix = glm::angleAxis(glm::half_pi<float>(), glm::vec3(0, -1, 0));
+
+    return fix_pitch * fix_yaw * glm::inverse(targetTrans.rotation) * -fix_pitch;
 }

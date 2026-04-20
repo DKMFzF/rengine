@@ -11,6 +11,7 @@ public:
     Navball(entt::registry& registry, std::shared_ptr<Model> model, TextureID texture);
 
     void update() noexcept;
+    glm::quat getIndicatorsQuat() const noexcept;
     int getRenderLayer() const noexcept { return m_renderlayer; }
 
 private:
