@@ -1,4 +1,4 @@
-#include "RenderSystem.hpp"
+#include "RenderEngine.hpp"
 #include "BoundingBox.hpp"
 #include "components/LineRenderer.hpp"
 #include "components/MeshRenderer.hpp"
@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-RenderSystem::RenderSystem(entt::registry& registry, uint32_t width, uint32_t height)
+RenderEngine::RenderEngine(entt::registry& registry, uint32_t width, uint32_t height)
     : m_registry { registry }
     , m_size { width, height }
 {
@@ -45,20 +45,20 @@ RenderSystem::RenderSystem(entt::registry& registry, uint32_t width, uint32_t he
     m_registry.emplace<SkyboxRenderer>(m_registry.create()).cubemap = m_cubemap;
 }
 
-void RenderSystem::resize(uint32_t width, uint32_t height) noexcept
+void RenderEngine::resize(uint32_t width, uint32_t height) noexcept
 {
     m_backend->resizeDefaultFramebuffer(width, height);
     m_size = { width, height };
 }
 
-int RenderSystem::addRenderLayer(uint32_t width, uint32_t height, entt::entity camera) noexcept
+int RenderEngine::addRenderLayer(uint32_t width, uint32_t height, entt::entity camera) noexcept
 {
     auto texture = m_backend->createRenderTexture(width, height);
     m_layers.emplace_back(RenderLayer { texture, camera });
     return m_layers.size() - 1;
 }
 
-void RenderSystem::setRenderLayerCamera(int nlayer, entt::entity camera) noexcept
+void RenderEngine::setRenderLayerCamera(int nlayer, entt::entity camera) noexcept
 {
     if (nlayer == DEFAULT_RENDER_LAYER) {
         m_defaultLayerCamera = camera;
@@ -68,18 +68,18 @@ void RenderSystem::setRenderLayerCamera(int nlayer, entt::entity camera) noexcep
     m_layers[nlayer].camera = camera;
 }
 
-ImTextureID RenderSystem::getGuiTextureFromLayer(int nlayer) noexcept
+ImTextureID RenderEngine::getGuiTextureFromLayer(int nlayer) noexcept
 {
     assert(m_layers.size() > nlayer && nlayer != DEFAULT_RENDER_LAYER);
     return (ImTextureID)m_backend->getGuiTexture(m_layers[nlayer].texture);
 }
 
-void RenderSystem::addPass(std::unique_ptr<RenderPass> pass) noexcept
+void RenderEngine::addPass(std::unique_ptr<RenderPass> pass) noexcept
 {
     m_passes.emplace_back(std::move(pass));
 }
 
-void RenderSystem::render() noexcept
+void RenderEngine::render() noexcept
 {
     RenderContext ctx {
         .registry = m_registry,

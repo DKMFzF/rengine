@@ -32,8 +32,8 @@ add_executable(${PROJECT_NAME}
     sources/App.hpp
     sources/Input.hpp
     sources/Input.cpp
-    sources/systems/RenderSystem.hpp
-    sources/systems/RenderSystem.cpp
+    sources/systems/RenderEngine.hpp
+    sources/systems/RenderEngine.cpp
     sources/systems/PhysicsEngine.hpp
     sources/systems/PhysicsEngine.cpp
     sources/systems/OrbitalEngine.hpp
@@ -99,7 +99,6 @@ add_executable(${PROJECT_NAME}
 
     sources/third-party/stb_image.h
     sources/third-party/stb_image.c
-    
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE sources)

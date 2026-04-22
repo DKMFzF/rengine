@@ -6,7 +6,7 @@
 #include "components/LineRenderer.hpp"
 #include "components/MeshRenderer.hpp"
 #include "components/Transform.hpp"
-#include "systems/RenderSystem.hpp"
+#include "systems/RenderEngine.hpp"
 #include <entt/entity/fwd.hpp>
 #include <glm/ext/matrix_projection.hpp>
 #include <glm/ext/quaternion_float.hpp>
@@ -35,7 +35,7 @@ Navball::Navball(entt::registry& registry, std::shared_ptr<Model> model, Texture
     registry.get<Camera>(m_cameraEntity).front = glm::normalize(-cameraPos);
     registry.emplace<Transform>(m_cameraEntity, Transform { .position = cameraPos });
 
-    m_renderlayer = registry.ctx().get<std::reference_wrapper<RenderSystem>>().get().addRenderLayer(400, 400, m_cameraEntity);
+    m_renderlayer = registry.ctx().get<std::reference_wrapper<RenderEngine>>().get().addRenderLayer(400, 400, m_cameraEntity);
     getComponent<MeshRenderer>().layer = m_renderlayer;
     getComponent<LineRenderer>().layer = m_renderlayer;
     getComponent<MeshRenderer>().shaded = false;

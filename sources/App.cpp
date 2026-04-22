@@ -46,7 +46,7 @@
 #include "systems/Clock.hpp"
 #include "systems/OrbitalEngine.hpp"
 #include "systems/PhysicsEngine.hpp"
-#include "systems/RenderSystem.hpp"
+#include "systems/RenderEngine.hpp"
 
 #include <cstdlib>
 #include <memory>
@@ -107,8 +107,8 @@ void App::run()
     auto& physics = m_registry.ctx().emplace<PhysicsEngine>(m_registry, tempAllocator, jobSystem);
     auto& orbital = m_registry.ctx().emplace<OrbiralEngine>(m_registry);
 
-    RenderSystem renderer { m_registry, (uint32_t)m_windowSize.x, (uint32_t)m_windowSize.y };
-    m_registry.ctx().emplace<std::reference_wrapper<RenderSystem>>(renderer);
+    RenderEngine renderer { m_registry, (uint32_t)m_windowSize.x, (uint32_t)m_windowSize.y };
+    m_registry.ctx().emplace<std::reference_wrapper<RenderEngine>>(renderer);
 
     auto xzModel = std::make_shared<Model>("resources/models/cursor.fbx");
     auto cubeModel = std::make_shared<Model>("resources/models/cube.obj");
@@ -445,5 +445,5 @@ void App::framebufferSizeCallback(GLFWwindow* window, int width, int height) noe
     auto& app = *static_cast<App*>(glfwGetWindowUserPointer(window));
     app.m_windowSize = { width, height };
     app.m_dispatcher.trigger<Event::WindowResize>({ { app.m_windowSize } });
-    app.m_registry.ctx().get<std::reference_wrapper<RenderSystem>>().get().resize(width, height);
+    app.m_registry.ctx().get<std::reference_wrapper<RenderEngine>>().get().resize(width, height);
 }
