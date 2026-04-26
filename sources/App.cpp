@@ -63,7 +63,7 @@ App::App(int windowWidth, int windowHeight, const std::string& windowTitle)
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-#if 0 // fullscreen
+#if 1 // fullscreen
     m_windowSize = { mode->width, mode->height };
     m_window = GlfwWindowPtr(glfwCreateWindow(m_windowSize.x, m_windowSize.y, windowTitle.c_str(), monitor, nullptr));
 #else
@@ -271,38 +271,46 @@ void App::run()
                         }
                     }
                 }
-#if 0
                 {
                     auto entity = piView.front();
                     auto [transform, renderer] = m_registry.get<Transform, MeshRenderer>(entity);
                     if (m_registry.all_of<OrbitalBody>(entity)) {
                         auto& body = m_registry.get<OrbitalBody>(entity);
-                        glm::vec3 indicator = -glm::normalize(glm::vec3 { body.velocity.y, -body.velocity.x, -body.velocity.z });
-                        indicator = navball.rotation() * indicator;
-                        if (indicator.z < 0) {
+                        glm::vec3 dir = glm::normalize(-body.velocity);
+                        dir.x = -dir.x;
+                        glm::vec3 indicator = navball.getIndicatorsQuat() * dir;
+                        if (indicator.z < 0.0f) {
                             indicator.z = 0;
                             indicator = glm::normalize(indicator);
                         }
-                        indicator.y = -indicator.y;
-                        indicator /= 2.0f;
-                        indicator += 0.5f;
-                        ImVec2 center = ImVec2(pos.x + size.x * indicator.x, pos.y + size.y * indicator.y);
+                        {
+                            float screen_x = (indicator.x * 0.5f + 0.5f);
+                            float screen_y = (1.0f - (indicator.y * 0.5f + 0.5f));
 
-                        float xlen = 8.0f;
-                        float ylen = 8.0f;
-                        ImU32 color = IM_COL32(255, 0, 255, 255);
+                            ImVec2 marker_center = ImVec2(pos.x + size.x * screen_x, pos.y + size.y * screen_y);
 
-                        draw_list->AddLine(
-                            ImVec2(center.x - xlen, center.y - ylen),
-                            ImVec2(center.x + xlen, center.y + ylen),
-                            color, 3.f);
-                        draw_list->AddLine(
-                            ImVec2(center.x + xlen, center.y - ylen),
-                            ImVec2(center.x - xlen, center.y + ylen),
-                            color, 3.f);
+                            float marker_size = 12.0f;
+                            ImU32 prograde_color = IM_COL32(255, 0, 0, 255);
+
+                            draw_list->AddCircle(marker_center, marker_size, prograde_color, 16, 3.0f);
+
+                            draw_list->AddLine(
+                                ImVec2(marker_center.x, marker_center.y - marker_size * 0.5),
+                                ImVec2(marker_center.x, marker_center.y - marker_size * 1.2f),
+                                prograde_color, 3.0f);
+
+                            draw_list->AddLine(
+                                ImVec2(marker_center.x - marker_size * 1.2f, marker_center.y),
+                                ImVec2(marker_center.x - marker_size * 0.5f, marker_center.y),
+                                prograde_color, 3.0f);
+
+                            draw_list->AddLine(
+                                ImVec2(marker_center.x + marker_size * 1.2f, marker_center.y),
+                                ImVec2(marker_center.x + marker_size * 0.5f, marker_center.y),
+                                prograde_color, 3.0f);
+                        }
                     }
                 }
-#endif
             }
             ImGui::End();
         }
